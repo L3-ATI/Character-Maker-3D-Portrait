@@ -1,0 +1,191 @@
+import bpy
+
+def update_ear_type(self, context):
+    """ Met à jour l'objet du modificateur Boolean de 'head' et les boucles d'oreilles en fonction du choix d'oreille et de boucle d'oreille """
+    obj = bpy.data.objects.get("head")  # Récupérer l'objet 'head'
+    
+    if not obj:
+        print("L'objet 'head' n'existe pas !")
+        return
+    
+    # Vérifier si un modificateur Boolean est déjà présent
+    bool_modifier = None
+    for mod in obj.modifiers:
+        if mod.type == 'BOOLEAN':
+            bool_modifier = mod
+            break
+    
+    if not bool_modifier:
+        print("Aucun modificateur Boolean trouvé sur 'head'.")
+        return
+    
+    # Associer l'oreille sélectionnée à un objet
+    ear_objects = {
+        "human": "boolEars1",
+        "elfe": "boolEars2",
+        "fae": "boolEars3"
+    }
+    
+    selected_ear = ear_objects.get(self.ear_type, None)
+    
+    if selected_ear:
+        ear_obj = bpy.data.objects.get(selected_ear)
+        if ear_obj:
+            bool_modifier.object = ear_obj
+            print(f"Modificateur Boolean mis à jour avec {selected_ear}.")
+        else:
+            print(f"L'objet {selected_ear} n'existe pas dans la scène.")
+    
+    # Mise à jour des boucles d'oreilles en fonction du type d'oreilles et du type de boucle d'oreille
+    earring_objects = {
+        "human": {
+            "stud": "studEarrings1",
+            "hoop": "hoopEarrings1",
+            "drop": "dropEarrings1"
+        },
+        "elfe": {
+            "stud": "studEarrings2",
+            "hoop": "hoopEarrings2",
+            "drop": "dropEarrings2"
+        },
+        "fae": {
+            "stud": "studEarrings3",
+            "hoop": "hoopEarrings3",
+            "drop": "dropEarrings3"
+        }
+    }
+    
+    # Désactiver toutes les boucles d'oreilles avant de les mettre à jour
+    for obj in bpy.data.objects:
+        if "Earrings" in obj.name:
+            obj.hide_set(True)  # Cache les autres objets de boucles d'oreilles
+    
+    selected_earring = earring_objects.get(self.ear_type, {}).get(self.earrings, None)
+    
+    if selected_earring:
+        earring_obj = bpy.data.objects.get(selected_earring)
+        if earring_obj:
+            earring_obj.hide_set(False)  # Affiche l'objet de boucles d'oreilles correspondant
+            print(f"Modèle de boucles d'oreilles mis à jour avec {selected_earring}.")
+        else:
+            print(f"L'objet {selected_earring} n'existe pas dans la scène.")
+
+class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
+    bl_label = "Character Maker 3D Portrait"
+    bl_idname = "BUSTE_PT_CustomizerPanel"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = "Character Maker"
+    
+    def draw(self, context):
+        layout = self.layout
+        props = context.scene.buste_customizer
+        
+        # Hair options
+        box = layout.box()
+        box.label(text="Hair Settings")
+        box.prop(props, "hair_front", text="Front")
+        box.prop(props, "hair_bangs", text="Bangs")
+        box.prop(props, "hair_back", text="Back")
+        
+        # Ears options
+        box = layout.box()
+        box.label(text="Ear Settings")
+        box.prop(props, "ear_type", text="Type")
+        box.prop(props, "earrings", text="Earrings")
+        
+        # Eyes options
+        box = layout.box()
+        box.label(text="Eye Settings")
+        box.prop(props, "eyelashes", text="Eyelashes")
+        box.prop(props, "eye_shape", text="Shape")
+        box.prop(props, "pupil_texture", text="Pupil Texture")
+        
+        # Mouth options
+        box = layout.box()
+        box.label(text="Mouth Settings")
+        box.prop(props, "mouth_texture", text="Texture")
+
+class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
+    hair_front: bpy.props.EnumProperty(
+        name="Front Hair",
+        items=[("none", "None", "No front hair"),
+               ("short", "Short", "Short front hair"),
+               ("long", "Long", "Long front hair")]
+    )
+    
+    hair_bangs: bpy.props.EnumProperty(
+        name="Bangs",
+        items=[("none", "None", "No bangs"),
+               ("side", "Side Bangs", "Side bangs"),
+               ("full", "Full Bangs", "Full bangs")]
+    )
+    
+    hair_back: bpy.props.EnumProperty(
+        name="Back Hair",
+        items=[("none", "None", "No back hair"),
+               ("ponytail", "Ponytail", "Ponytail"),
+               ("braid", "Braid", "Braid")]
+    )
+    
+    ear_type: bpy.props.EnumProperty(
+        name="Ear Type",
+        items=[
+            ("human", "Human", "Human ears"),
+            ("elfe", "Elfe", "Elfe ears"),
+            ("fae", "Fae", "Fae ears")
+        ],
+        update=update_ear_type  # Appelle la fonction quand l'utilisateur change d'option
+    )
+    
+    earrings: bpy.props.EnumProperty(
+        name="Earrings",
+        items=[
+            ("stud", "Stud", "Stud earrings"),
+            ("hoop", "Hoop", "Hoop earrings"),
+            ("drop", "Drop", "Drop earrings")
+        ],
+        update=update_ear_type  # Appelle la fonction lors de la sélection d'une boucle d'oreille
+    )
+    
+    eyelashes: bpy.props.BoolProperty(
+        name="Eyelashes",
+        description="Enable eyelashes",
+        default=True
+    )
+    
+    eye_shape: bpy.props.EnumProperty(
+        name="Eye Shape",
+        items=[("round", "Round", "Round eyes"),
+               ("almond", "Almond", "Almond-shaped eyes"),
+               ("narrow", "Narrow", "Narrow eyes")]
+    )
+    
+    pupil_texture: bpy.props.EnumProperty(
+        name="Pupil Texture",
+        items=[("default", "Default", "Default texture"),
+               ("cat", "Cat", "Cat-like pupils"),
+               ("star", "Star", "Star-shaped pupils")]
+    )
+    
+    mouth_texture: bpy.props.EnumProperty(
+        name="Mouth Texture",
+        items=[("default", "Default", "Default texture"),
+               ("smile", "Smile", "Smiling mouth"),
+               ("serious", "Serious", "Serious mouth")]
+    )
+
+classes = [BUSTE_PT_CustomizerPanel, BUSTE_CustomizerProperties]
+
+def register():
+    for cls in classes:
+        bpy.utils.register_class(cls)
+    bpy.types.Scene.buste_customizer = bpy.props.PointerProperty(type=BUSTE_CustomizerProperties)
+
+def unregister():
+    for cls in reversed(classes):
+        bpy.utils.unregister_class(cls)
+    del bpy.types.Scene.buste_customizer
+
+if __name__ == "__main__":
+    register()

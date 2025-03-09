@@ -70,6 +70,97 @@ def update_ear_type(self, context):
         else:
             print(f"L'objet {selected_earring} n'existe pas dans la scène.")
 
+def update_facial_shape_keys(self, context):
+    """ Met à jour les shape keys du visage et des yeux en même temps. """
+    head = bpy.data.objects.get("head")
+    eyes = bpy.data.objects.get("eyes")  # Assure-toi que "eyes" est bien le nom de ton objet yeux
+
+    if not head or not head.data.shape_keys:
+        print("L'objet 'head' n'a pas de shape keys !")
+        return
+
+    if not eyes or not eyes.data.shape_keys:
+        print("L'objet 'eyes' n'a pas de shape keys !")
+        return
+
+    # Shape keys associées
+    shape_keys = {
+        "eyes_proximity": self.eyes_proximity,
+        "eyes_height": self.eyes_height,
+        "eyes_size": self.eyes_size,
+        "eyes_width": self.eyes_width,
+        "eyes_length": self.eyes_length,
+        "eyes_tilt": self.eyes_tilt,
+        "eyes_closing": self.eyes_closing
+    }
+
+    # Appliquer les valeurs aux shape keys du head
+    for key, value in shape_keys.items():
+        if key in head.data.shape_keys.key_blocks:
+            head.data.shape_keys.key_blocks[key].value = value
+        else:
+            print(f"Shape Key '{key}' non trouvée sur 'head'.")
+
+        # Appliquer les mêmes valeurs aux shape keys des yeux
+        if key in eyes.data.shape_keys.key_blocks:
+            eyes.data.shape_keys.key_blocks[key].value = value
+        else:
+            print(f"Shape Key '{key}' non trouvée sur 'eyes'.")
+
+def update_hair_base(self, context):
+    """ Active ou désactive les bangs dans le modificateur Boolean du hairBase """
+    hair_objects = {
+        "hb1": "hairBase1",
+        "hb2": "hairBase2",
+        "hb3": "hairBase3",
+        "hb4": "hairBase4",
+    }
+
+    bangs_objects = {
+        "boolBangs1": "boolBangs1",
+        "boolBangs2": "boolBangs2",
+        "boolBangs3": "boolBangs3",
+    }
+
+    # Parcourir tous les hairBase et leur appliquer le modificateur Boolean avec les bangs
+    selected_bangs = bangs_objects.get(self.bangs, None)
+
+    # Vérifie chaque hairBase et met à jour son modificateur Boolean
+    for key, obj_name in hair_objects.items():
+        if obj_name:
+            obj = bpy.data.objects.get(obj_name)
+            if obj:
+                # Chercher le modificateur Boolean sur l'objet
+                bool_modifier = None
+                for mod in obj.modifiers:
+                    if mod.type == 'BOOLEAN' and mod.name == "BooleanBangs":  # Recherche le modificateur existant
+                        bool_modifier = mod
+                        break
+                
+                # Si un modificateur Boolean est trouvé, l'assigner au bon objet de bangs
+                if bool_modifier:
+                    bool_modifier.show_viewport = True  # Assurer que le modificateur est visible
+                    if selected_bangs:
+                        bool_modifier.object = bpy.data.objects.get(selected_bangs)
+                    else:
+                        bool_modifier.object = None  # Si aucun bangs sélectionné, ne rien affecter
+                    print(f"Modificateur Boolean de {obj_name} mis à jour avec {selected_bangs}.")
+       
+   # Désactiver uniquement les objets listés dans hair_objects
+    for key in hair_objects:
+        obj_name = hair_objects[key]
+        if obj_name:
+            obj = bpy.data.objects.get(obj_name)
+            if obj:
+                obj.hide_set(True)
+
+    # Activer celui sélectionné
+    selected_hair = hair_objects.get(self.hair_base, None)
+    if selected_hair:
+        obj = bpy.data.objects.get(selected_hair)
+        if obj:
+            obj.hide_set(False)
+       
 class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
     bl_label = "Character Maker 3D Portrait"
     bl_idname = "BUSTE_PT_CustomizerPanel"
@@ -84,9 +175,8 @@ class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
         # Hair options
         box = layout.box()
         box.label(text="Hair Settings")
-        box.prop(props, "hair_front", text="Front")
-        box.prop(props, "hair_bangs", text="Bangs")
-        box.prop(props, "hair_back", text="Back")
+        box.prop(props, "hair_base", text="Base")
+        box.prop(props, "bangs", text="Bangs")
         
         # Ears options
         box = layout.box()
@@ -100,6 +190,16 @@ class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
         box.prop(props, "eyelashes", text="Eyelashes")
         box.prop(props, "eye_shape", text="Shape")
         box.prop(props, "pupil_texture", text="Pupil Texture")
+
+        # Shape Key sliders
+        box.label(text="Eye Shape Adjustments")
+        box.prop(props, "eyes_proximity", text="Proximity")
+        box.prop(props, "eyes_height", text="Height")
+        box.prop(props, "eyes_size", text="Size")
+        box.prop(props, "eyes_width", text="Width")
+        box.prop(props, "eyes_length", text="Length")
+        box.prop(props, "eyes_tilt", text="Tilt")
+        box.prop(props, "eyes_closing", text="Closing")
         
         # Mouth options
         box = layout.box()
@@ -107,25 +207,76 @@ class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
         box.prop(props, "mouth_texture", text="Texture")
 
 class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
-    hair_front: bpy.props.EnumProperty(
-        name="Front Hair",
-        items=[("none", "None", "No front hair"),
-               ("short", "Short", "Short front hair"),
-               ("long", "Long", "Long front hair")]
+    eyes_proximity: bpy.props.FloatProperty(
+        name="Eyes Proximity",
+        description="Adjust distance between eyes",
+        min=-1.0, max=1.0, default=0.0,
+        update=lambda self, context: update_facial_shape_keys(self, context)
     )
     
-    hair_bangs: bpy.props.EnumProperty(
+    eyes_height: bpy.props.FloatProperty(
+        name="Eyes Height",
+        description="Adjust vertical eye position",
+        min=-1.0, max=1.0, default=0.0,
+        update=lambda self, context: update_facial_shape_keys(self, context)
+    )
+
+    eyes_size: bpy.props.FloatProperty(
+        name="Eyes Size",
+        description="Adjust overall eye size",
+        min=-1.0, max=1.0, default=0.0,
+        update=lambda self, context: update_facial_shape_keys(self, context)
+    )
+
+    eyes_width: bpy.props.FloatProperty(
+        name="Eyes Width",
+        description="Adjust eye width",
+        min=-1.0, max=1.0, default=0.0,
+        update=lambda self, context: update_facial_shape_keys(self, context)
+    )
+
+    eyes_length: bpy.props.FloatProperty(
+        name="Eyes Length",
+        description="Adjust eye length",
+        min=-1.0, max=1.0, default=0.0,
+        update=lambda self, context: update_facial_shape_keys(self, context)
+    )
+
+    eyes_tilt: bpy.props.FloatProperty(
+        name="Eyes Tilt",
+        description="Tilt the eyes",
+        min=0.0, max=1.0, default=0.0,
+        update=lambda self, context: update_facial_shape_keys(self, context)
+    )
+
+    eyes_closing: bpy.props.FloatProperty(
+        name="Eyes Closing",
+        description="Control eyelid closure",
+        min=0.0, max=1.0, default=0.0,
+        update=lambda self, context: update_facial_shape_keys(self, context)
+    )
+
+    hair_base: bpy.props.EnumProperty(
+        name="Base Hair",
+        items=[
+            ("hb1", "Classic", "Classic hair base"),
+            ("hb2", "Round", "Round hair base"),
+            ("hb3", "Tressed", "Tressed hair base"),
+            ("hb4", "Arranged", "Arranged hair base"),
+            ("bald", "Bald", "No hair")
+        ],
+        update=update_hair_base
+    )
+        
+    bangs: bpy.props.EnumProperty(
         name="Bangs",
-        items=[("none", "None", "No bangs"),
-               ("side", "Side Bangs", "Side bangs"),
-               ("full", "Full Bangs", "Full bangs")]
-    )
-    
-    hair_back: bpy.props.EnumProperty(
-        name="Back Hair",
-        items=[("none", "None", "No back hair"),
-               ("ponytail", "Ponytail", "Ponytail"),
-               ("braid", "Braid", "Braid")]
+        items=[
+            ("boolBangs1", "Bangs Type 1", "Frange de type 1"),
+            ("boolBangs2", "Bangs Type 2", "Frange de type 2"),
+            ("boolBangs3", "Bangs Type 3", "Frange de type 3"),
+            ("none", "None", "Pas de frange")
+        ],
+        update=update_hair_base
     )
     
     ear_type: bpy.props.EnumProperty(
@@ -152,13 +303,6 @@ class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
         name="Eyelashes",
         description="Enable eyelashes",
         default=True
-    )
-    
-    eye_shape: bpy.props.EnumProperty(
-        name="Eye Shape",
-        items=[("round", "Round", "Round eyes"),
-               ("almond", "Almond", "Almond-shaped eyes"),
-               ("narrow", "Narrow", "Narrow eyes")]
     )
     
     pupil_texture: bpy.props.EnumProperty(

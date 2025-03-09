@@ -120,6 +120,7 @@ def update_hair_base(self, context):
         "boolBangs1": "boolBangs1",
         "boolBangs2": "boolBangs2",
         "boolBangs3": "boolBangs3",
+        "boolBangs4": "boolBangs4",
     }
 
     # Parcourir tous les hairBase et leur appliquer le modificateur Boolean avec les bangs
@@ -271,10 +272,12 @@ class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
     bangs: bpy.props.EnumProperty(
         name="Bangs",
         items=[
-            ("boolBangs1", "Bangs Type 1", "Frange de type 1"),
-            ("boolBangs2", "Bangs Type 2", "Frange de type 2"),
-            ("boolBangs3", "Bangs Type 3", "Frange de type 3"),
-            ("none", "None", "Pas de frange")
+            ("none", "None", "Pas de frange"),
+            ("boolBangs1", "Shell", "Frange de type 1"),
+            ("boolBangs2", "Side", "Frange de type 2"),
+            ("boolBangs3", "Heart", "Frange de type 3"),
+            ("boolBangs4", "Asymmetrical Heart", "Frange de type 4")
+            
         ],
         update=update_hair_base
     )

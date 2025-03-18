@@ -209,16 +209,67 @@ class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
         box.prop(props, "eye_shape", text="Shape")
         box.prop(props, "pupil_texture", text="Pupil Texture")
 
-        # Shape Keys
+        # Brows Shape Keys
         box = layout.box()
-        box.label(text="Facial Shape Adjustments")
+        box.label(text="Brows Settings")
         shape_keys = [
-            "brows_height", "brows_depth",
-            "eyes_proximity", "eyes_height", "eyes_size", "eyes_width", "eyes_length", "eyes_tilt", "eyes_closing",
-            "cheeks_proximity", "cheeks_height", "cheeks_size", "cheeks_width", "jaw_depth",
-            "nose_height", "nose_width", "nose_angle",
-            "chin_size", "chin_height"
+            "brows_height",
+            "brows_depth"
         ]
+        
+        for key in shape_keys:
+            box.prop(props, key)
+        
+        # Eyes Shape Keys
+        box = layout.box()
+        box.label(text="Eyes Settings")
+        shape_keys = [
+            "eyes_proximity",
+            "eyes_height",
+            "eyes_size",
+            "eyes_width",
+            "eyes_length",
+            "eyes_tilt",
+            "eyes_closing"
+        ]
+        
+        for key in shape_keys:
+            box.prop(props, key)
+        
+        # Cheeks Shape Keys
+        box = layout.box()
+        box.label(text="Cheeks Settings")
+        shape_keys = [
+            "cheeks_proximity",
+            "cheeks_height",
+            "cheeks_size",
+            "cheeks_width",
+            "jaw_depth"
+        ]
+        
+        for key in shape_keys:
+            box.prop(props, key)
+        
+        # Nose Shape Keys
+        box = layout.box()
+        box.label(text="Nose Settings")
+        shape_keys = [
+            "nose_height",
+            "nose_width",
+            "nose_angle"
+        ]
+        
+        for key in shape_keys:
+            box.prop(props, key)
+        
+        # Chin Shape Keys
+        box = layout.box()
+        box.label(text="Chin Settings")
+        shape_keys = [
+            "chin_size",
+            "chin_height"
+        ]
+        
         for key in shape_keys:
             box.prop(props, key)
         

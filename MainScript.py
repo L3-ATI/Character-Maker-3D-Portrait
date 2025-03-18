@@ -137,7 +137,6 @@ def update_hair_base(self, context):
         "boolBangs1": "boolBangs1",
         "boolBangs2": "boolBangs2",
         "boolBangs3": "boolBangs3",
-        "boolBangs4": "boolBangs4",
     }
 
     # Parcourir tous les hairBase et leur appliquer le modificateur Boolean avec les bangs
@@ -163,22 +162,7 @@ def update_hair_base(self, context):
                     else:
                         bool_modifier.object = None  # Si aucun bangs sélectionné, ne rien affecter
                     print(f"Modificateur Boolean de {obj_name} mis à jour avec {selected_bangs}.")
-       
-   # Désactiver uniquement les objets listés dans hair_objects
-    for key in hair_objects:
-        obj_name = hair_objects[key]
-        if obj_name:
-            obj = bpy.data.objects.get(obj_name)
-            if obj:
-                obj.hide_set(True)
 
-    # Activer celui sélectionné
-    selected_hair = hair_objects.get(self.hair_base, None)
-    if selected_hair:
-        obj = bpy.data.objects.get(selected_hair)
-        if obj:
-            obj.hide_set(False)
-       
 class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
     bl_label = "Character Maker 3D Portrait"
     bl_idname = "BUSTE_PT_CustomizerPanel"
@@ -195,6 +179,11 @@ class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
         box.label(text="Hair Settings")
         box.prop(props, "hair_base", text="Base")
         box.prop(props, "bangs", text="Bangs")
+        
+         # Bangs options
+        box = layout.box()
+        box.label(text="Bangs Settings")
+        box.prop(props, "bangs", text="Bangs Type")
         
         # Ears options
         box = layout.box()
@@ -388,7 +377,8 @@ class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
             ("hb3", "Tressed", ""),
             ("hb4", "Arranged", ""),
             ("bald", "Bald", "")
-        ]
+        ],
+        update=update_hair_base
     )
 
     bangs: bpy.props.EnumProperty(
@@ -399,7 +389,8 @@ class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
             ("boolBangs2", "Side", ""),
             ("boolBangs3", "Heart", ""),
             ("boolBangs4", "Asymmetrical Heart", "")
-        ]
+        ],
+        update=update_hair_base
     )
 
     # Ears

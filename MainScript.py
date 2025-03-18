@@ -85,13 +85,30 @@ def update_facial_shape_keys(self, context):
 
     # Shape keys associées
     shape_keys = {
+        
+        "brows_height": self.brows_height,
+        "brows_depth": self.brows_depth,
+        
         "eyes_proximity": self.eyes_proximity,
         "eyes_height": self.eyes_height,
         "eyes_size": self.eyes_size,
         "eyes_width": self.eyes_width,
         "eyes_length": self.eyes_length,
         "eyes_tilt": self.eyes_tilt,
-        "eyes_closing": self.eyes_closing
+        "eyes_closing": self.eyes_closing,
+        
+        "cheeks_proximity": self.cheeks_proximity,
+        "cheeks_height": self.cheeks_height,
+        "cheeks_size": self.cheeks_size,
+        "cheeks_width": self.cheeks_width,
+        "jaw_depth": self.jaw_depth,
+        
+        "nose_height": self.nose_height,
+        "nose_width": self.nose_width,
+        "nose_angle": self.nose_angle,
+        
+        "chin_size": self.chin_size,
+        "chin_height": self.chin_height,
     }
 
     # Appliquer les valeurs aux shape keys du head
@@ -192,15 +209,18 @@ class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
         box.prop(props, "eye_shape", text="Shape")
         box.prop(props, "pupil_texture", text="Pupil Texture")
 
-        # Shape Key sliders
-        box.label(text="Eye Shape Adjustments")
-        box.prop(props, "eyes_proximity", text="Proximity")
-        box.prop(props, "eyes_height", text="Height")
-        box.prop(props, "eyes_size", text="Size")
-        box.prop(props, "eyes_width", text="Width")
-        box.prop(props, "eyes_length", text="Length")
-        box.prop(props, "eyes_tilt", text="Tilt")
-        box.prop(props, "eyes_closing", text="Closing")
+        # Shape Keys
+        box = layout.box()
+        box.label(text="Facial Shape Adjustments")
+        shape_keys = [
+            "brows_height", "brows_depth",
+            "eyes_proximity", "eyes_height", "eyes_size", "eyes_width", "eyes_length", "eyes_tilt", "eyes_closing",
+            "cheeks_proximity", "cheeks_height", "cheeks_size", "cheeks_width", "jaw_depth",
+            "nose_height", "nose_width", "nose_angle",
+            "chin_size", "chin_height"
+        ]
+        for key in shape_keys:
+            box.prop(props, key)
         
         # Mouth options
         box = layout.box()
@@ -208,118 +228,170 @@ class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
         box.prop(props, "mouth_texture", text="Texture")
 
 class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
-    eyes_proximity: bpy.props.FloatProperty(
-        name="Eyes Proximity",
-        description="Adjust distance between eyes",
-        min=-1.0, max=1.0, default=0.0,
-        update=lambda self, context: update_facial_shape_keys(self, context)
-    )
     
+    brows_height: bpy.props.FloatProperty(
+        name="Brows Height", min=-1.0, max=1.0, default=0.0,
+        update=update_facial_shape_keys
+    )
+
+    brows_depth: bpy.props.FloatProperty(
+        name="Brows Depth", min=-1.0, max=1.0, default=0.0,
+        update=update_facial_shape_keys
+    )
+
+    # Eyes
+    eyes_proximity: bpy.props.FloatProperty(
+        name="Eyes Proximity", min=-1.0, max=1.0, default=0.0,
+        update=update_facial_shape_keys
+    )
+
     eyes_height: bpy.props.FloatProperty(
-        name="Eyes Height",
-        description="Adjust vertical eye position",
-        min=-1.0, max=1.0, default=0.0,
-        update=lambda self, context: update_facial_shape_keys(self, context)
+        name="Eyes Height", min=-1.0, max=1.0, default=0.0,
+        update=update_facial_shape_keys
     )
 
     eyes_size: bpy.props.FloatProperty(
-        name="Eyes Size",
-        description="Adjust overall eye size",
-        min=-1.0, max=1.0, default=0.0,
-        update=lambda self, context: update_facial_shape_keys(self, context)
+        name="Eyes Size", min=-1.0, max=1.0, default=0.0,
+        update=update_facial_shape_keys
     )
 
     eyes_width: bpy.props.FloatProperty(
-        name="Eyes Width",
-        description="Adjust eye width",
-        min=-1.0, max=1.0, default=0.0,
-        update=lambda self, context: update_facial_shape_keys(self, context)
+        name="Eyes Width", min=-1.0, max=1.0, default=0.0,
+        update=update_facial_shape_keys
     )
 
     eyes_length: bpy.props.FloatProperty(
-        name="Eyes Length",
-        description="Adjust eye length",
-        min=-1.0, max=1.0, default=0.0,
-        update=lambda self, context: update_facial_shape_keys(self, context)
+        name="Eyes Length", min=-1.0, max=1.0, default=0.0,
+        update=update_facial_shape_keys
     )
 
     eyes_tilt: bpy.props.FloatProperty(
-        name="Eyes Tilt",
-        description="Tilt the eyes",
-        min=0.0, max=1.0, default=0.0,
-        update=lambda self, context: update_facial_shape_keys(self, context)
+        name="Eyes Tilt", min=-1.0, max=1.0, default=0.0,
+        update=update_facial_shape_keys
     )
 
     eyes_closing: bpy.props.FloatProperty(
-        name="Eyes Closing",
-        description="Control eyelid closure",
-        min=0.0, max=1.0, default=0.0,
-        update=lambda self, context: update_facial_shape_keys(self, context)
+        name="Eyes Closing", min=0.0, max=1.0, default=0.0,
+        update=update_facial_shape_keys
     )
 
+    # Cheeks & Jaw
+    cheeks_proximity: bpy.props.FloatProperty(
+        name="Cheeks Proximity", min=-1.0, max=1.0, default=0.0,
+        update=update_facial_shape_keys
+    )
+
+    cheeks_height: bpy.props.FloatProperty(
+        name="Cheeks Height", min=-1.0, max=1.0, default=0.0,
+        update=update_facial_shape_keys
+    )
+
+    cheeks_size: bpy.props.FloatProperty(
+        name="Cheeks Size", min=-1.0, max=1.0, default=0.0,
+        update=update_facial_shape_keys
+    )
+
+    cheeks_width: bpy.props.FloatProperty(
+        name="Cheeks Width", min=-1.0, max=1.0, default=0.0,
+        update=update_facial_shape_keys
+    )
+
+    jaw_depth: bpy.props.FloatProperty(
+        name="Jaw Depth", min=-1.0, max=1.0, default=0.0,
+        update=update_facial_shape_keys
+    )
+
+    # Nose
+    nose_height: bpy.props.FloatProperty(
+        name="Nose Height", min=-1.0, max=1.0, default=0.0,
+        update=update_facial_shape_keys
+    )
+
+    nose_width: bpy.props.FloatProperty(
+        name="Nose Width", min=-1.0, max=1.0, default=0.0,
+        update=update_facial_shape_keys
+    )
+
+    nose_angle: bpy.props.FloatProperty(
+        name="Nose Angle", min=-1.0, max=1.0, default=0.0,
+        update=update_facial_shape_keys
+    )
+
+    # Chin
+    chin_size: bpy.props.FloatProperty(
+        name="Chin Size", min=-1.0, max=1.0, default=0.0,
+        update=update_facial_shape_keys
+    )
+
+    chin_height: bpy.props.FloatProperty(
+        name="Chin Height", min=-1.0, max=1.0, default=0.0,
+        update=update_facial_shape_keys
+    )
+
+    # Hair
     hair_base: bpy.props.EnumProperty(
         name="Base Hair",
         items=[
-            ("hb1", "Classic", "Classic hair base"),
-            ("hb2", "Round", "Round hair base"),
-            ("hb3", "Tressed", "Tressed hair base"),
-            ("hb4", "Arranged", "Arranged hair base"),
-            ("bald", "Bald", "No hair")
-        ],
-        update=update_hair_base
+            ("hb1", "Classic", ""),
+            ("hb2", "Round", ""),
+            ("hb3", "Tressed", ""),
+            ("hb4", "Arranged", ""),
+            ("bald", "Bald", "")
+        ]
     )
-        
+
     bangs: bpy.props.EnumProperty(
         name="Bangs",
         items=[
-            ("none", "None", "Pas de frange"),
-            ("boolBangs1", "Shell", "Frange de type 1"),
-            ("boolBangs2", "Side", "Frange de type 2"),
-            ("boolBangs3", "Heart", "Frange de type 3"),
-            ("boolBangs4", "Asymmetrical Heart", "Frange de type 4")
-            
-        ],
-        update=update_hair_base
+            ("none", "None", ""),
+            ("boolBangs1", "Shell", ""),
+            ("boolBangs2", "Side", ""),
+            ("boolBangs3", "Heart", ""),
+            ("boolBangs4", "Asymmetrical Heart", "")
+        ]
     )
-    
+
+    # Ears
     ear_type: bpy.props.EnumProperty(
         name="Ear Type",
         items=[
-            ("human", "Human", "Human ears"),
-            ("elfe", "Elfe", "Elfe ears"),
-            ("fae", "Fae", "Fae ears")
-        ],
-        update=update_ear_type  # Appelle la fonction quand l'utilisateur change d'option
+            ("human", "Human", ""),
+            ("elfe", "Elfe", ""),
+            ("fae", "Fae", "")
+        ]
     )
-    
+
     earrings: bpy.props.EnumProperty(
         name="Earrings",
         items=[
-            ("stud", "Stud", "Stud earrings"),
-            ("hoop", "Hoop", "Hoop earrings"),
-            ("drop", "Drop", "Drop earrings")
-        ],
-        update=update_ear_type  # Appelle la fonction lors de la sélection d'une boucle d'oreille
+            ("stud", "Stud", ""),
+            ("hoop", "Hoop", ""),
+            ("drop", "Drop", "")
+        ]
     )
-    
+
+    # Eyes
     eyelashes: bpy.props.BoolProperty(
-        name="Eyelashes",
-        description="Enable eyelashes",
-        default=True
+        name="Eyelashes", default=True
     )
-    
+
     pupil_texture: bpy.props.EnumProperty(
         name="Pupil Texture",
-        items=[("default", "Default", "Default texture"),
-               ("cat", "Cat", "Cat-like pupils"),
-               ("star", "Star", "Star-shaped pupils")]
+        items=[
+            ("default", "Default", ""),
+            ("cat", "Cat", ""),
+            ("star", "Star", "")
+        ]
     )
-    
+
+    # Mouth
     mouth_texture: bpy.props.EnumProperty(
         name="Mouth Texture",
-        items=[("default", "Default", "Default texture"),
-               ("smile", "Smile", "Smiling mouth"),
-               ("serious", "Serious", "Serious mouth")]
+        items=[
+            ("default", "Default", ""),
+            ("smile", "Smile", ""),
+            ("serious", "Serious", "")
+        ]
     )
 
 classes = [BUSTE_PT_CustomizerPanel, BUSTE_CustomizerProperties]

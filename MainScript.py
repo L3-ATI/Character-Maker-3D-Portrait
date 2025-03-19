@@ -40,7 +40,7 @@ def update_ears(self, context):
     earring_objects = {
         "human": {
             "stud": "studEarrings1",
-            "hoop": "hoopEarrings1",
+            "hoop":  "hoopEarrings1",
             "drop": "dropEarrings1"
         },
         "elfe": {
@@ -130,26 +130,60 @@ def update_facial_shape_keys(self, context):
             eyebrows.data.shape_keys.key_blocks[key].value = shape_keys[key]
 
 def update_brows_shape_keys(self, context):
-    """ Met à jour les shape keys spécifiques aux sourcils """
-    brows = bpy.data.objects.get("eyebrows")
+    """ Applique les shape keys uniquement sur les sourcils actifs """
+    
+    active_brows = bpy.data.objects.get(self.brows_type)
 
-    if not brows or not brows.data.shape_keys:
-        print("L'objet 'eyebrows' n'a pas de shape keys !")
+    if not active_brows or not active_brows.data.shape_keys:
+        print(f"L'objet '{self.brows_type}' n'a pas de shape keys !")
         return
 
     shape_keys = {
-        "brows_height": self.brows_height,  # Déjà synchronisé avec head/eyes
-        "brows_depth": self.brows_depth,  # Déjà synchronisé avec head/eyes
-        "brows_angle": self.brows_angle,  # Shape key spécifique
-        "brows_thickness": self.brows_thickness,  # Shape key spécifique
-        "brows_spacing": self.brows_spacing  # Shape key spécifique
+    
+        # Déjà synchronisées avec head/eyes
+        "brows_height": self.brows_height,
+        "brows_depth": self.brows_depth,
+        
+        # Shape keys spécifiques
+        "brows_proximity": self.brows_proximity,
+        "brows_size": self.brows_size,
+        "brows_angle": self.brows_angle,
+        "brows_thickness": self.brows_thickness,
+        "brows_tilt": self.brows_tilt,
+        
+        "brows_arch": self.brows_arch,
+        "brows_frown": self.brows_frown
     }
 
     for key, value in shape_keys.items():
-        if key in brows.data.shape_keys.key_blocks:
-            brows.data.shape_keys.key_blocks[key].value = value
+        if key in active_brows.data.shape_keys.key_blocks:
+            active_brows.data.shape_keys.key_blocks[key].value = value
         else:
-            print(f"Shape Key '{key}' non trouvée sur 'eyebrows'.")
+            print(f"Shape Key '{key}' non trouvée sur '{self.brows_type}'.")
+            
+def update_brows(self, context):
+    """ Active les sourcils sélectionnés et applique les shape keys uniquement à ceux-ci """
+    
+    # Définition des objets sourcils
+    brows_objects = {
+        "eyebrows1": bpy.data.objects.get("eyebrows1"),
+        "eyebrows2": bpy.data.objects.get("eyebrows2"),
+    }
+
+    # Désactiver tous les sourcils
+    for brows in brows_objects.values():
+        if brows:
+            brows.hide_set(True)
+
+    # Activer uniquement les sourcils sélectionnés
+    active_brows = brows_objects.get(self.brows_type)
+    if active_brows:
+        active_brows.hide_set(False)
+        print(f"Sourcils activés : {self.brows_type}")
+
+    # Mettre à jour les shape keys des sourcils actifs
+    update_brows_shape_keys(self, context)
+
 
 
 
@@ -249,12 +283,22 @@ class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
         box.prop(props, "eye_shape", text="Shape")
         box.prop(props, "pupil_texture", text="Pupil Texture")
 
-        # Brows Shape Keys
+        # Eyebrows Shape Keys
         box = layout.box()
-        box.label(text="Brows Settings")
+        box.label(text="Eyebrows Settings")
+        box.prop(props, "brows_type", text="Eyebrows Type")
         shape_keys = [
             "brows_height",
-            "brows_depth"
+            "brows_depth",
+            
+            "brows_proximity",
+            "brows_size",
+            "brows_angle",
+            "brows_thickness",
+            "brows_tilt",
+            
+            "brows_arch",
+            "brows_frown"
         ]
         
         for key in shape_keys:
@@ -320,15 +364,64 @@ class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
 
 class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
     
+    # Eyebrows
+    brows_type: bpy.props.EnumProperty(
+        name="Eyebrows Type",
+        items=[
+            ("eyebrows1", "Eyebrows 1", ""),
+            ("eyebrows2", "Eyebrows 2", ""),
+        ],
+        default="eyebrows1",
+        update=update_brows
+    )
+
+
     brows_height: bpy.props.FloatProperty(
-        name="Brows Height", min=-1.0, max=1.0, default=0.0,
-        update=update_facial_shape_keys
+        name="Eyebrows Height", min=-1.0, max=1.0, default=0.0,
+        update=update_brows_shape_keys
     )
 
     brows_depth: bpy.props.FloatProperty(
-        name="Brows Depth", min=-1.0, max=1.0, default=0.0,
-        update=update_facial_shape_keys
+        name="Eyebrows Depth", min=-1.0, max=1.0, default=0.0,
+        update=update_brows_shape_keys
     )
+
+    brows_proximity: bpy.props.FloatProperty(
+        name="Eyebrows Proximity", min=-1.0, max=1.0, default=0.0,
+        update=update_brows_shape_keys
+    )
+
+    brows_size: bpy.props.FloatProperty(
+        name="Eyebrows Size", min=-1.0, max=1.0, default=0.0,
+        update=update_brows_shape_keys
+    )
+
+    brows_angle: bpy.props.FloatProperty(
+        name="Eyebrows Angle", min=-1.0, max=1.0, default=0.0,
+        update=update_brows_shape_keys
+    )
+
+    brows_thickness: bpy.props.FloatProperty(
+        name="Eyebrows Thickness", min=-1.0, max=1.0, default=0.0,
+        update=update_brows_shape_keys
+    )
+
+    brows_tilt: bpy.props.FloatProperty(
+        name="Eyebrows Tilt", min=-1.0, max=1.0, default=0.0,
+        update=update_brows_shape_keys
+    )
+
+    brows_arch: bpy.props.FloatProperty(
+        name="Eyebrows Arch", min=-1.0, max=1.0, default=0.0,
+        update=update_brows_shape_keys
+    )
+
+    brows_frown: bpy.props.FloatProperty(
+        name="Eyebrows Frown", min=-1.0, max=1.0, default=0.0,
+        update=update_brows_shape_keys
+    )
+
+
 
     # Eyes
     eyes_proximity: bpy.props.FloatProperty(
@@ -366,6 +459,8 @@ class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
         update=update_facial_shape_keys
     )
 
+
+
     # Cheeks & Jaw
     cheeks_proximity: bpy.props.FloatProperty(
         name="Cheeks Proximity", min=-1.0, max=1.0, default=0.0,
@@ -391,6 +486,8 @@ class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
         name="Jaw Depth", min=-1.0, max=1.0, default=0.0,
         update=update_facial_shape_keys
     )
+
+
 
     # Nose
     nose_height: bpy.props.FloatProperty(
@@ -419,6 +516,8 @@ class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
         update=update_facial_shape_keys
     )
 
+
+
     # Hair
     hair_base: bpy.props.EnumProperty(
         name="Base Hair",
@@ -445,6 +544,8 @@ class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
         update=update_hair
     )
 
+
+
     # Ears
     ear_type: bpy.props.EnumProperty(
         name="Ear Type",
@@ -466,7 +567,9 @@ class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
         update=update_ears
     )
 
-    # Eyes
+
+
+    # Eyelashes
     eyelashes: bpy.props.BoolProperty(
         name="Eyelashes", default=True
     )

@@ -1,6 +1,6 @@
 import bpy
 
-def update_ear_type(self, context):
+def update_ears(self, context):
     """ Met à jour l'objet du modificateur Boolean de 'head' et les boucles d'oreilles en fonction du choix d'oreille et de boucle d'oreille """
     obj = bpy.data.objects.get("head")  # Récupérer l'objet 'head'
     
@@ -124,44 +124,74 @@ def update_facial_shape_keys(self, context):
         else:
             print(f"Shape Key '{key}' non trouvée sur 'eyes'.")
 
-def update_hair_base(self, context):
-    """ Active ou désactive les bangs dans le modificateur Boolean du hairBase """
+
+import bpy
+
+def update_hair(self, context):
+    """ Active la hairBase sélectionnée, met à jour le modificateur Boolean des bangs et applique un offset aux bangs """
+
     hair_objects = {
         "hb1": "hairBase1",
         "hb2": "hairBase2",
         "hb3": "hairBase3",
         "hb4": "hairBase4",
+        "hb5": "hairBase5",
     }
 
     bangs_objects = {
         "boolBangs1": "boolBangs1",
         "boolBangs2": "boolBangs2",
         "boolBangs3": "boolBangs3",
+        "boolBangs4": "boolBangs4",
     }
 
-    # Parcourir tous les hairBase et leur appliquer le modificateur Boolean avec les bangs
-    selected_bangs = bangs_objects.get(self.bangs, None)
+    # Définition des offsets en fonction de la hairBase sélectionnée
+    bangs_offsets = {
+        "hb1": (0.0, 0.0, 0.0),
+        "hb2": (0.0, -0.1, -0.2),
+        "hb3": (0.0, -0.3, -0.25),
+        "hb4": (0.0, -0.1, -0.3),
+        "hb5": (0.0, -0.2, -0.3),
+    }
 
-    # Vérifie chaque hairBase et met à jour son modificateur Boolean
-    for key, obj_name in hair_objects.items():
-        if obj_name:
-            obj = bpy.data.objects.get(obj_name)
-            if obj:
-                # Chercher le modificateur Boolean sur l'objet
-                bool_modifier = None
-                for mod in obj.modifiers:
-                    if mod.type == 'BOOLEAN' and mod.name == "BooleanBangs":  # Recherche le modificateur existant
-                        bool_modifier = mod
-                        break
-                
-                # Si un modificateur Boolean est trouvé, l'assigner au bon objet de bangs
-                if bool_modifier:
-                    bool_modifier.show_viewport = True  # Assurer que le modificateur est visible
-                    if selected_bangs:
-                        bool_modifier.object = bpy.data.objects.get(selected_bangs)
-                    else:
-                        bool_modifier.object = None  # Si aucun bangs sélectionné, ne rien affecter
-                    print(f"Modificateur Boolean de {obj_name} mis à jour avec {selected_bangs}.")
+    selected_hair = hair_objects.get(self.hair_base, None)
+    selected_bangs = bangs_objects.get(self.bangs, None)
+    new_position = bangs_offsets.get(self.hair_base, (0.0, 0.0, 0.0))
+
+    # Désactiver toutes les hairBase avant d'activer la sélectionnée
+    for obj_name in hair_objects.values():
+        obj = bpy.data.objects.get(obj_name)
+        if obj:
+            obj.hide_set(True)  # Cache l'objet
+
+    # Activer uniquement la hairBase sélectionnée
+    if selected_hair:
+        obj = bpy.data.objects.get(selected_hair)
+        if obj:
+            obj.hide_set(False)  # Affiche l'objet
+            print(f"HairBase activée : {selected_hair}")
+
+            # Mise à jour du modificateur Boolean pour les bangs sélectionnés
+            bool_modifier = None
+            for mod in obj.modifiers:
+                if mod.type == 'BOOLEAN' and mod.name == "BooleanBangs":
+                    bool_modifier = mod
+                    break
+            
+            if bool_modifier:
+                bool_modifier.show_viewport = True
+                bool_modifier.object = bpy.data.objects.get(selected_bangs) if selected_bangs else None
+                print(f"Modificateur Boolean mis à jour avec {selected_bangs}.")
+    
+    # Appliquer la position absolue SEULEMENT au bangs sélectionné
+    if selected_bangs:
+        bangs_obj = bpy.data.objects.get(selected_bangs)
+        if bangs_obj:
+            bangs_obj.location = new_position  # Affectation directe en world space
+            print(f"Position absolue appliquée à {selected_bangs} : {new_position}")
+
+
+
 
 class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
     bl_label = "Character Maker 3D Portrait"
@@ -179,11 +209,6 @@ class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
         box.label(text="Hair Settings")
         box.prop(props, "hair_base", text="Base")
         box.prop(props, "bangs", text="Bangs")
-        
-         # Bangs options
-        box = layout.box()
-        box.label(text="Bangs Settings")
-        box.prop(props, "bangs", text="Bangs Type")
         
         # Ears options
         box = layout.box()
@@ -376,9 +401,10 @@ class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
             ("hb2", "Round", ""),
             ("hb3", "Tressed", ""),
             ("hb4", "Arranged", ""),
+            ("hb5", "Parted", ""),
             ("bald", "Bald", "")
         ],
-        update=update_hair_base
+        update=update_hair
     )
 
     bangs: bpy.props.EnumProperty(
@@ -390,7 +416,7 @@ class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
             ("boolBangs3", "Heart", ""),
             ("boolBangs4", "Asymmetrical Heart", "")
         ],
-        update=update_hair_base
+        update=update_hair
     )
 
     # Ears
@@ -400,7 +426,8 @@ class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
             ("human", "Human", ""),
             ("elfe", "Elfe", ""),
             ("fae", "Fae", "")
-        ]
+        ],
+        update=update_ears
     )
 
     earrings: bpy.props.EnumProperty(
@@ -409,7 +436,8 @@ class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
             ("stud", "Stud", ""),
             ("hoop", "Hoop", ""),
             ("drop", "Drop", "")
-        ]
+        ],
+        update=update_ears
     )
 
     # Eyes

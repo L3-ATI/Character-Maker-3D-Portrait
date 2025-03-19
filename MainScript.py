@@ -1,19 +1,22 @@
 import bpy
 
+import bpy
+
+import bpy
+
+import bpy
+
 def update_ears(self, context):
-    """ Met à jour l'objet du modificateur Boolean de 'head' et les boucles d'oreilles en fonction du choix d'oreille et de boucle d'oreille """
+    """Met à jour l'oreille et les boucles d'oreilles en fonction des choix sélectionnés."""
+    
     obj = bpy.data.objects.get("head")  # Récupérer l'objet 'head'
     
     if not obj:
         print("L'objet 'head' n'existe pas !")
         return
     
-    # Vérifier si un modificateur Boolean est déjà présent
-    bool_modifier = None
-    for mod in obj.modifiers:
-        if mod.type == 'BOOLEAN':
-            bool_modifier = mod
-            break
+    # Vérifier s'il y a un modificateur Boolean
+    bool_modifier = next((mod for mod in obj.modifiers if mod.type == 'BOOLEAN'), None)
     
     if not bool_modifier:
         print("Aucun modificateur Boolean trouvé sur 'head'.")
@@ -26,8 +29,8 @@ def update_ears(self, context):
         "fae": "boolEars3"
     }
     
-    selected_ear = ear_objects.get(self.ear_type, None)
-    
+    selected_ear = ear_objects.get(self.ear_type)
+
     if selected_ear:
         ear_obj = bpy.data.objects.get(selected_ear)
         if ear_obj:
@@ -36,45 +39,70 @@ def update_ears(self, context):
         else:
             print(f"L'objet {selected_ear} n'existe pas dans la scène.")
     
-    # Mise à jour des boucles d'oreilles en fonction du type d'oreilles et du type de boucle d'oreille
+    # --- Mise à jour des boucles d'oreilles ---
+    
+    # Associer le bon modèle de boucle d'oreille en fonction du type d'oreille
     earring_objects = {
         "human": {
-            "stud": "studEarrings1",
-            "hoop":  "hoopEarrings1",
-            "drop": "dropEarrings1"
+            "stud": ("studEarrings_L1", "studEarrings_R1"),
+            "hoop": ("hoopEarrings_L1", "hoopEarrings_R1"),
+            "drop": ("dropEarrings_L1", "dropEarrings_R1")
         },
         "elfe": {
-            "stud": "studEarrings2",
-            "hoop": "hoopEarrings2",
-            "drop": "dropEarrings2"
+            "stud": ("studEarrings_L2", "studEarrings_R2"),
+            "hoop": ("hoopEarrings_L2", "hoopEarrings_R2"),
+            "drop": ("dropEarrings_L2", "dropEarrings_R2")
         },
         "fae": {
-            "stud": "studEarrings3",
-            "hoop": "hoopEarrings3",
-            "drop": "dropEarrings3"
+            "stud": ("studEarrings_L3", "studEarrings_R3"),
+            "hoop": ("hoopEarrings_L3", "hoopEarrings_R3"),
+            "drop": ("dropEarrings_L3", "dropEarrings_R3")
         }
     }
     
-    # Désactiver toutes les boucles d'oreilles avant de les mettre à jour
+    # Désactiver toutes les boucles d'oreilles avant d'afficher les nouvelles
     for obj in bpy.data.objects:
-        if "Earrings" in obj.name:
-            obj.hide_set(True)  # Cache les autres objets de boucles d'oreilles
+        if "Earrings_L" in obj.name or "Earrings_R" in obj.name:
+            obj.hide_set(True)
+
+    # Récupérer les boucles d'oreilles correspondantes
+    selected_earrings = earring_objects.get(self.ear_type, {}).get(self.earrings_L)  # Utilisation de earrings_L pour choisir le modèle
     
-    selected_earring = earring_objects.get(self.ear_type, {}).get(self.earrings, None)
-    
-    if selected_earring:
-        earring_obj = bpy.data.objects.get(selected_earring)
-        if earring_obj:
-            earring_obj.hide_set(False)  # Affiche l'objet de boucles d'oreilles correspondant
-            print(f"Modèle de boucles d'oreilles mis à jour avec {selected_earring}.")
+    if selected_earrings:
+        left_earring, right_earring = selected_earrings  # Décomposer en boucle gauche et droite
+
+        # Activer la boucle d'oreille gauche
+        earring_obj_L = bpy.data.objects.get(left_earring)
+        if earring_obj_L:
+            earring_obj_L.hide_set(False)
+            print(f"Boucle d'oreille gauche activée : {left_earring}.")
         else:
-            print(f"L'objet {selected_earring} n'existe pas dans la scène.")
+            print(f"L'objet {left_earring} n'existe pas dans la scène.")
+
+        # Activer la boucle d'oreille droite
+        earring_obj_R = bpy.data.objects.get(right_earring)
+        if earring_obj_R:
+            earring_obj_R.hide_set(False)
+            print(f"Boucle d'oreille droite activée : {right_earring}.")
+        else:
+            print(f"L'objet {right_earring} n'existe pas dans la scène.")
+
+
+
 
 def update_facial_shape_keys(self, context):
     """ Met à jour les shape keys du visage et des yeux en même temps. """
     head = bpy.data.objects.get("head")
     eyes = bpy.data.objects.get("eyes")
-    eyebrows = bpy.data.objects.get("eyebrows")
+    
+    # Sélectionner les sourcils actifs
+    brows_objects = {
+        "eyebrows1": bpy.data.objects.get("eyebrows1"),
+        "eyebrows2": bpy.data.objects.get("eyebrows2"),
+        "eyebrows3": bpy.data.objects.get("eyebrows3"),
+    }
+    
+    active_brows = brows_objects.get(self.brows_type)
         
     if not head or not head.data.shape_keys:
         print("L'objet 'head' n'a pas de shape keys !")
@@ -84,7 +112,7 @@ def update_facial_shape_keys(self, context):
         print("L'objet 'eyes' n'a pas de shape keys !")
         return
     
-    if not eyebrows or not eyebrows.data.shape_keys:
+    if not active_brows or not active_brows.data.shape_keys:
         print("L'objet 'eyebrows' n'a pas de shape keys !")
         return
 
@@ -116,18 +144,17 @@ def update_facial_shape_keys(self, context):
         "chin_height": self.chin_height,
     }
 
-    # Appliquer les valeurs aux shape keys du head et eyes
+    # Appliquer les shape keys pour tous les objets (head, eyes, et sourcils actifs)
     for key, value in shape_keys.items():
         if key in head.data.shape_keys.key_blocks:
             head.data.shape_keys.key_blocks[key].value = value
         if key in eyes.data.shape_keys.key_blocks:
             eyes.data.shape_keys.key_blocks[key].value = value
+        if key in active_brows.data.shape_keys.key_blocks:
+            active_brows.data.shape_keys.key_blocks[key].value = value
 
-    # Appliquer uniquement les shape keys des sourcils pour "brows_height" et "brows_depth"
-    brows_keys = ["brows_height", "brows_depth"]
-    for key in brows_keys:
-        if key in eyebrows.data.shape_keys.key_blocks:
-            eyebrows.data.shape_keys.key_blocks[key].value = shape_keys[key]
+    print(f"Shape keys mises à jour pour head, eyes et {self.brows_type}")
+
 
 def update_brows_shape_keys(self, context):
     """ Applique les shape keys uniquement sur les sourcils actifs """
@@ -168,6 +195,7 @@ def update_brows(self, context):
     brows_objects = {
         "eyebrows1": bpy.data.objects.get("eyebrows1"),
         "eyebrows2": bpy.data.objects.get("eyebrows2"),
+        "eyebrows3": bpy.data.objects.get("eyebrows3"),
     }
 
     # Désactiver tous les sourcils
@@ -274,7 +302,8 @@ class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
         box = layout.box()
         box.label(text="Ear Settings")
         box.prop(props, "ear_type", text="Type")
-        box.prop(props, "earrings", text="Earrings")
+        box.prop(props, "earrings_R", text="Right Earrings")
+        box.prop(props, "earrings_L", text="Left Earrings")
         
         # Eyes options
         box = layout.box()
@@ -370,6 +399,7 @@ class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
         items=[
             ("eyebrows1", "Eyebrows 1", ""),
             ("eyebrows2", "Eyebrows 2", ""),
+            ("eyebrows3", "Eyebrows 3", ""),
         ],
         default="eyebrows1",
         update=update_brows
@@ -378,12 +408,12 @@ class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
 
     brows_height: bpy.props.FloatProperty(
         name="Eyebrows Height", min=-1.0, max=1.0, default=0.0,
-        update=update_brows_shape_keys
+        update=update_facial_shape_keys
     )
 
     brows_depth: bpy.props.FloatProperty(
         name="Eyebrows Depth", min=-1.0, max=1.0, default=0.0,
-        update=update_brows_shape_keys
+        update=update_facial_shape_keys
     )
 
     brows_proximity: bpy.props.FloatProperty(
@@ -557,8 +587,18 @@ class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
         update=update_ears
     )
 
-    earrings: bpy.props.EnumProperty(
-        name="Earrings",
+    earrings_L: bpy.props.EnumProperty(
+        name="Left Earrings",
+        items=[
+            ("stud", "Stud", ""),
+            ("hoop", "Hoop", ""),
+            ("drop", "Drop", "")
+        ],
+        update=update_ears
+    )
+
+    earrings_R: bpy.props.EnumProperty(
+        name="Right Earrings",
         items=[
             ("stud", "Stud", ""),
             ("hoop", "Hoop", ""),

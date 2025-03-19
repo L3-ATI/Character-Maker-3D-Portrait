@@ -73,14 +73,19 @@ def update_ears(self, context):
 def update_facial_shape_keys(self, context):
     """ Met à jour les shape keys du visage et des yeux en même temps. """
     head = bpy.data.objects.get("head")
-    eyes = bpy.data.objects.get("eyes")  # Assure-toi que "eyes" est bien le nom de ton objet yeux
-
+    eyes = bpy.data.objects.get("eyes")
+    eyebrows = bpy.data.objects.get("eyebrows")
+        
     if not head or not head.data.shape_keys:
         print("L'objet 'head' n'a pas de shape keys !")
         return
 
     if not eyes or not eyes.data.shape_keys:
         print("L'objet 'eyes' n'a pas de shape keys !")
+        return
+    
+    if not eyebrows or not eyebrows.data.shape_keys:
+        print("L'objet 'eyebrows' n'a pas de shape keys !")
         return
 
     # Shape keys associées
@@ -111,21 +116,42 @@ def update_facial_shape_keys(self, context):
         "chin_height": self.chin_height,
     }
 
-    # Appliquer les valeurs aux shape keys du head
+    # Appliquer les valeurs aux shape keys du head et eyes
     for key, value in shape_keys.items():
         if key in head.data.shape_keys.key_blocks:
             head.data.shape_keys.key_blocks[key].value = value
-        else:
-            print(f"Shape Key '{key}' non trouvée sur 'head'.")
-
-        # Appliquer les mêmes valeurs aux shape keys des yeux
         if key in eyes.data.shape_keys.key_blocks:
             eyes.data.shape_keys.key_blocks[key].value = value
+
+    # Appliquer uniquement les shape keys des sourcils pour "brows_height" et "brows_depth"
+    brows_keys = ["brows_height", "brows_depth"]
+    for key in brows_keys:
+        if key in eyebrows.data.shape_keys.key_blocks:
+            eyebrows.data.shape_keys.key_blocks[key].value = shape_keys[key]
+
+def update_brows_shape_keys(self, context):
+    """ Met à jour les shape keys spécifiques aux sourcils """
+    brows = bpy.data.objects.get("eyebrows")
+
+    if not brows or not brows.data.shape_keys:
+        print("L'objet 'eyebrows' n'a pas de shape keys !")
+        return
+
+    shape_keys = {
+        "brows_height": self.brows_height,  # Déjà synchronisé avec head/eyes
+        "brows_depth": self.brows_depth,  # Déjà synchronisé avec head/eyes
+        "brows_angle": self.brows_angle,  # Shape key spécifique
+        "brows_thickness": self.brows_thickness,  # Shape key spécifique
+        "brows_spacing": self.brows_spacing  # Shape key spécifique
+    }
+
+    for key, value in shape_keys.items():
+        if key in brows.data.shape_keys.key_blocks:
+            brows.data.shape_keys.key_blocks[key].value = value
         else:
-            print(f"Shape Key '{key}' non trouvée sur 'eyes'.")
+            print(f"Shape Key '{key}' non trouvée sur 'eyebrows'.")
 
 
-import bpy
 
 def update_hair(self, context):
     """ Active la hairBase sélectionnée, met à jour le modificateur Boolean des bangs et applique un offset aux bangs """

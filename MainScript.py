@@ -1,11 +1,5 @@
 import bpy
 
-import bpy
-
-import bpy
-
-import bpy
-
 def update_ears(self, context):
     """Met à jour l'oreille et ajuste les boucles d'oreilles en fonction des choix sélectionnés."""
     
@@ -38,48 +32,105 @@ def update_ears(self, context):
             print(f"Modificateur Boolean mis à jour avec {selected_ear}.")
         else:
             print(f"L'objet {selected_ear} n'existe pas dans la scène.")
+
+    # --- Mise à jour des boucles d'oreilles (Lobe + Hélix) ---
     
-    # --- Mise à jour des boucles d'oreilles ---
-    
-    # Associer chaque type de boucle à son objet
-    earring_objects = {
+    # Boucles d'oreilles du lobe
+    lobe_earring_objects = {
         "earrings1": ("earrings_L1", "earrings_R1"),
         "earrings2": ("earrings_L2", "earrings_R2"),
-        "earrings3": ("earrings_L3", "earrings_R3")
+        "earrings3": ("earrings_L3", "earrings_R3"),
+        "earrings4": ("earrings_L4", "earrings_R4"),
+        "earrings5": ("earrings_L5", "earrings_R5")
     }
-    
-    # Offsets en fonction du type d'oreille
-    earring_offsets = {
-        "human": (0, 0, 0),
+
+    # Boucles d'oreilles de l'hélix
+    helix_earring_objects = {
+        "helix1": ("helix_L1", "helix_R1"),
+        "helix2": ("helix_L2", "helix_R2"),
+        "helix3": ("helix_L3", "helix_R3")
+    }
+
+    # Offsets pour chaque type d'oreille
+    lobe_offsets = {
+        "human": (0.0, 0.0, 0.0),
         "elfe": (0.01, -0.01, 0.0),
         "fae": (0.05, -0.02, 0.0)
     }
-    offset = earring_offsets.get(self.ear_type, (0, 0, 0))
-    
-   # Récupérer les boucles d'oreilles correspondantes pour chaque côté
-    selected_earring_L = self.earrings_L
-    selected_earring_R = self.earrings_R
 
-    for earring_name in earring_objects.values():
+    helix_offsets = {
+        "human": (0.0, 0.0, 0.0),
+        "elfe": (-0.05, -0.58, 1.7),
+        "fae": (0.35, -0.63, 1.9)
+    }
+    
+    # Offsets de rotation en radians
+    from math import radians
+    lobe_rotation_offsets = {
+        "human": (radians(0), radians(0), radians(0)),
+        "elfe": (radians(0), radians(0), radians(0)),
+        "fae": (radians(0), radians(0), radians(0))
+    }
+
+    helix_rotation_offsets = {
+        "human": (radians(0), radians(0), radians(0)),
+        "elfe": (radians(-43), radians(33), radians(0)),
+        "fae": (radians(-50), radians(40), radians(0))
+    }
+
+     # Récupérer les offsets selon le type d'oreille
+    lobe_offset = lobe_offsets.get(self.ear_type, (0, 0, 0))
+    helix_offset = helix_offsets.get(self.ear_type, (0, 0, 0))
+
+    lobe_rotation_offset = lobe_rotation_offsets.get(self.ear_type, (0, 0, 0))
+    helix_rotation_offset = helix_rotation_offsets.get(self.ear_type, (0, 0, 0))
+
+    # Récupérer les boucles d'oreilles sélectionnées
+    selected_lobe_L = self.earrings_L
+    selected_lobe_R = self.earrings_R
+    selected_helix_L = self.helix_L
+    selected_helix_R = self.helix_R
+
+    # Cacher toutes les boucles d'oreilles
+    for earring_name in lobe_earring_objects.values():
         for obj_name in earring_name:
             obj = bpy.data.objects.get(obj_name)
             if obj:
                 obj.hide_set(True)
 
-    # Activer la boucle d'oreille gauche
-    if selected_earring_L:
-        earring_obj_L = bpy.data.objects.get(selected_earring_L)
+    for earring_name in helix_earring_objects.values():
+        for obj_name in earring_name:
+            obj = bpy.data.objects.get(obj_name)
+            if obj:
+                obj.hide_set(True)
+
+    # --- Activer et placer les boucles du lobe ---
+    if selected_lobe_L:
+        earring_obj_L = bpy.data.objects.get(selected_lobe_L)
         if earring_obj_L:
             earring_obj_L.hide_set(False)
-            earring_obj_L.location = offset
+            earring_obj_L.location = lobe_offset  # Coordonnées MONDE
 
-    # Activer la boucle d'oreille droite
-    if selected_earring_R:
-        earring_obj_R = bpy.data.objects.get(selected_earring_R)
+    if selected_lobe_R:
+        earring_obj_R = bpy.data.objects.get(selected_lobe_R)
         if earring_obj_R:
             earring_obj_R.hide_set(False)
-            earring_obj_R.location = (-offset[0], offset[1], offset[2])  # Inversion en X pour symétrie
+            earring_obj_R.location = (-lobe_offset[0], lobe_offset[1], lobe_offset[2])  # Inversion en X
 
+    # --- Activer et placer les boucles de l'hélix ---
+    if selected_helix_L:
+        helix_obj_L = bpy.data.objects.get(selected_helix_L)
+        if helix_obj_L:
+            helix_obj_L.hide_set(False)
+            helix_obj_L.location = helix_offset  # Coordonnées MONDE
+            helix_obj_L.rotation_euler = helix_rotation_offset  # Rotation MONDE
+
+    if selected_helix_R:
+        helix_obj_R = bpy.data.objects.get(selected_helix_R)
+        if helix_obj_R:
+            helix_obj_R.hide_set(False)
+            helix_obj_R.location = (-helix_offset[0], helix_offset[1], helix_offset[2])  # Inversion en X
+            helix_obj_R.rotation_euler = (helix_rotation_offset[0], -helix_rotation_offset[1], -helix_rotation_offset[2])  # Inversion en X et Z
 
 def update_facial_shape_keys(self, context):
     """ Met à jour les shape keys du visage et des yeux en même temps. """
@@ -284,25 +335,25 @@ class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
         props = context.scene.buste_customizer
 
         sections = {
-            "Hair Settings": ["hair_base", "bangs"],
-            "Ear Settings": ["ear_type", "earrings_R", "earrings_L"],
-            "Eye Settings": ["eyelashes", "eye_shape", "pupil_texture"],
-            "Eyebrows Settings": [
+            "——— Hair Settings ———": ["hair_base", "bangs"],
+            "——— Ear Settings ———": ["ear_type", "earrings_R", "earrings_L", "helix_R", "helix_L"],
+            "——— Eye Settings ———": ["eyelashes", "eye_shape", "pupil_texture"],
+            "——— Eyebrows Settings ———": [
                 "brows_type", "brows_height", "brows_depth", "brows_proximity",
                 "brows_size", "brows_angle", "brows_thickness", "brows_tilt",
                 "brows_arch", "brows_frown"
             ],
-            "Eyes Settings": [
+            "——— Eyes Settings ———": [
                 "eyes_proximity", "eyes_height", "eyes_size", "eyes_width",
                 "eyes_length", "eyes_tilt", "eyes_closing"
             ],
-            "Cheeks Settings": [
+            "——— Cheeks Settings ———": [
                 "cheeks_proximity", "cheeks_height", "cheeks_size",
                 "cheeks_width", "jaw_depth"
             ],
-            "Nose Settings": ["nose_height", "nose_width", "nose_angle"],
-            "Chin Settings": ["chin_size", "chin_height"],
-            "Mouth Settings": ["mouth_texture"],
+            "——— Nose Settings ———": ["nose_height", "nose_width", "nose_angle"],
+            "——— Chin Settings ———": ["chin_size", "chin_height"],
+            "——— Mouth Settings ———": ["mouth_texture"],
         }
 
         for section_name, keys in sections.items():
@@ -508,22 +559,52 @@ class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
         update=update_ears
     )
 
+    # Boucles d'oreilles du lobe
     earrings_L: bpy.props.EnumProperty(
-        name="Left Earrings",
+        name="Left Lobe Earrings",
         items=[
+            ("none", "None", ""),
             ("earrings_L1", "Stud", ""),
             ("earrings_L2", "Hoop", ""),
-            ("earrings_L3", "Drop", "")
+            ("earrings_L3", "Diamond Drop", ""),
+            ("earrings_L4", "Ringued Drop", ""),
+            ("earrings_L5", "Long Drop", "")
         ],
         update=update_ears
     )
 
     earrings_R: bpy.props.EnumProperty(
-        name="Right Earrings",
+        name="Right Lobe Earrings",
         items=[
+            ("none", "None", ""),
             ("earrings_R1", "Stud", ""),
             ("earrings_R2", "Hoop", ""),
-            ("earrings_R3", "Drop", "")
+            ("earrings_R3", "Diamond Drop", ""),
+            ("earrings_R4", "Ringued Drop", ""),
+            ("earrings_R5", "Long Drop", "")
+        ],
+        update=update_ears
+    )
+
+    # Boucles d'oreilles de l'hélix
+    helix_L: bpy.props.EnumProperty(
+        name="Left Helix Earrings",
+        items=[
+            ("none", "None", ""),
+            ("helix_L1", "Ring", ""),
+            ("helix_L2", "Double Ring", ""),
+            ("helix_L3", "Triple Ring", "")
+        ],
+        update=update_ears
+    )
+
+    helix_R: bpy.props.EnumProperty(
+        name="Right Helix Earrings",
+        items=[
+            ("none", "None", ""),
+            ("helix_R1", "Ring", ""),
+            ("helix_R2", "Double Ring", ""),
+            ("helix_R3", "Triple Ring", "")
         ],
         update=update_ears
     )

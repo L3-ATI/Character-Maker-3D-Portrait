@@ -7,7 +7,7 @@ import bpy
 import bpy
 
 def update_ears(self, context):
-    """Met à jour l'oreille et les boucles d'oreilles en fonction des choix sélectionnés."""
+    """Met à jour l'oreille et ajuste les boucles d'oreilles en fonction des choix sélectionnés."""
     
     obj = bpy.data.objects.get("head")  # Récupérer l'objet 'head'
     
@@ -41,53 +41,44 @@ def update_ears(self, context):
     
     # --- Mise à jour des boucles d'oreilles ---
     
-    # Associer le bon modèle de boucle d'oreille en fonction du type d'oreille
+    # Associer chaque type de boucle à son objet
     earring_objects = {
-        "human": {
-            "stud": ("studEarrings_L1", "studEarrings_R1"),
-            "hoop": ("hoopEarrings_L1", "hoopEarrings_R1"),
-            "drop": ("dropEarrings_L1", "dropEarrings_R1")
-        },
-        "elfe": {
-            "stud": ("studEarrings_L2", "studEarrings_R2"),
-            "hoop": ("hoopEarrings_L2", "hoopEarrings_R2"),
-            "drop": ("dropEarrings_L2", "dropEarrings_R2")
-        },
-        "fae": {
-            "stud": ("studEarrings_L3", "studEarrings_R3"),
-            "hoop": ("hoopEarrings_L3", "hoopEarrings_R3"),
-            "drop": ("dropEarrings_L3", "dropEarrings_R3")
-        }
+        "earrings1": ("earrings_L1", "earrings_R1"),
+        "earrings2": ("earrings_L2", "earrings_R2"),
+        "earrings3": ("earrings_L3", "earrings_R3")
     }
     
-    # Désactiver toutes les boucles d'oreilles avant d'afficher les nouvelles
-    for obj in bpy.data.objects:
-        if "Earrings_L" in obj.name or "Earrings_R" in obj.name:
-            obj.hide_set(True)
-
-    # Récupérer les boucles d'oreilles correspondantes
-    selected_earrings = earring_objects.get(self.ear_type, {}).get(self.earrings_L)  # Utilisation de earrings_L pour choisir le modèle
+    # Offsets en fonction du type d'oreille
+    earring_offsets = {
+        "human": (0, 0, 0),
+        "elfe": (0.01, -0.01, 0.0),
+        "fae": (0.05, -0.02, 0.0)
+    }
+    offset = earring_offsets.get(self.ear_type, (0, 0, 0))
     
-    if selected_earrings:
-        left_earring, right_earring = selected_earrings  # Décomposer en boucle gauche et droite
+   # Récupérer les boucles d'oreilles correspondantes pour chaque côté
+    selected_earring_L = self.earrings_L
+    selected_earring_R = self.earrings_R
 
-        # Activer la boucle d'oreille gauche
-        earring_obj_L = bpy.data.objects.get(left_earring)
+    for earring_name in earring_objects.values():
+        for obj_name in earring_name:
+            obj = bpy.data.objects.get(obj_name)
+            if obj:
+                obj.hide_set(True)
+
+    # Activer la boucle d'oreille gauche
+    if selected_earring_L:
+        earring_obj_L = bpy.data.objects.get(selected_earring_L)
         if earring_obj_L:
             earring_obj_L.hide_set(False)
-            print(f"Boucle d'oreille gauche activée : {left_earring}.")
-        else:
-            print(f"L'objet {left_earring} n'existe pas dans la scène.")
+            earring_obj_L.location = offset
 
-        # Activer la boucle d'oreille droite
-        earring_obj_R = bpy.data.objects.get(right_earring)
+    # Activer la boucle d'oreille droite
+    if selected_earring_R:
+        earring_obj_R = bpy.data.objects.get(selected_earring_R)
         if earring_obj_R:
             earring_obj_R.hide_set(False)
-            print(f"Boucle d'oreille droite activée : {right_earring}.")
-        else:
-            print(f"L'objet {right_earring} n'existe pas dans la scène.")
-
-
+            earring_obj_R.location = (-offset[0], offset[1], offset[2])  # Inversion en X pour symétrie
 
 
 def update_facial_shape_keys(self, context):
@@ -291,105 +282,35 @@ class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         props = context.scene.buste_customizer
-        
-        # Hair options
-        box = layout.box()
-        box.label(text="Hair Settings")
-        box.prop(props, "hair_base", text="Base")
-        box.prop(props, "bangs", text="Bangs")
-        
-        # Ears options
-        box = layout.box()
-        box.label(text="Ear Settings")
-        box.prop(props, "ear_type", text="Type")
-        box.prop(props, "earrings_R", text="Right Earrings")
-        box.prop(props, "earrings_L", text="Left Earrings")
-        
-        # Eyes options
-        box = layout.box()
-        box.label(text="Eye Settings")
-        box.prop(props, "eyelashes", text="Eyelashes")
-        box.prop(props, "eye_shape", text="Shape")
-        box.prop(props, "pupil_texture", text="Pupil Texture")
 
-        # Eyebrows Shape Keys
-        box = layout.box()
-        box.label(text="Eyebrows Settings")
-        box.prop(props, "brows_type", text="Eyebrows Type")
-        shape_keys = [
-            "brows_height",
-            "brows_depth",
-            
-            "brows_proximity",
-            "brows_size",
-            "brows_angle",
-            "brows_thickness",
-            "brows_tilt",
-            
-            "brows_arch",
-            "brows_frown"
-        ]
-        
-        for key in shape_keys:
-            box.prop(props, key)
-        
-        # Eyes Shape Keys
-        box = layout.box()
-        box.label(text="Eyes Settings")
-        shape_keys = [
-            "eyes_proximity",
-            "eyes_height",
-            "eyes_size",
-            "eyes_width",
-            "eyes_length",
-            "eyes_tilt",
-            "eyes_closing"
-        ]
-        
-        for key in shape_keys:
-            box.prop(props, key)
-        
-        # Cheeks Shape Keys
-        box = layout.box()
-        box.label(text="Cheeks Settings")
-        shape_keys = [
-            "cheeks_proximity",
-            "cheeks_height",
-            "cheeks_size",
-            "cheeks_width",
-            "jaw_depth"
-        ]
-        
-        for key in shape_keys:
-            box.prop(props, key)
-        
-        # Nose Shape Keys
-        box = layout.box()
-        box.label(text="Nose Settings")
-        shape_keys = [
-            "nose_height",
-            "nose_width",
-            "nose_angle"
-        ]
-        
-        for key in shape_keys:
-            box.prop(props, key)
-        
-        # Chin Shape Keys
-        box = layout.box()
-        box.label(text="Chin Settings")
-        shape_keys = [
-            "chin_size",
-            "chin_height"
-        ]
-        
-        for key in shape_keys:
-            box.prop(props, key)
-        
-        # Mouth options
-        box = layout.box()
-        box.label(text="Mouth Settings")
-        box.prop(props, "mouth_texture", text="Texture")
+        sections = {
+            "Hair Settings": ["hair_base", "bangs"],
+            "Ear Settings": ["ear_type", "earrings_R", "earrings_L"],
+            "Eye Settings": ["eyelashes", "eye_shape", "pupil_texture"],
+            "Eyebrows Settings": [
+                "brows_type", "brows_height", "brows_depth", "brows_proximity",
+                "brows_size", "brows_angle", "brows_thickness", "brows_tilt",
+                "brows_arch", "brows_frown"
+            ],
+            "Eyes Settings": [
+                "eyes_proximity", "eyes_height", "eyes_size", "eyes_width",
+                "eyes_length", "eyes_tilt", "eyes_closing"
+            ],
+            "Cheeks Settings": [
+                "cheeks_proximity", "cheeks_height", "cheeks_size",
+                "cheeks_width", "jaw_depth"
+            ],
+            "Nose Settings": ["nose_height", "nose_width", "nose_angle"],
+            "Chin Settings": ["chin_size", "chin_height"],
+            "Mouth Settings": ["mouth_texture"],
+        }
+
+        for section_name, keys in sections.items():
+            box = layout.box()
+            box.label(text=section_name)
+            for key in keys:
+                box.prop(props, key)
+
 
 class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
     
@@ -590,9 +511,9 @@ class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
     earrings_L: bpy.props.EnumProperty(
         name="Left Earrings",
         items=[
-            ("stud", "Stud", ""),
-            ("hoop", "Hoop", ""),
-            ("drop", "Drop", "")
+            ("earrings_L1", "Stud", ""),
+            ("earrings_L2", "Hoop", ""),
+            ("earrings_L3", "Drop", "")
         ],
         update=update_ears
     )
@@ -600,9 +521,9 @@ class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
     earrings_R: bpy.props.EnumProperty(
         name="Right Earrings",
         items=[
-            ("stud", "Stud", ""),
-            ("hoop", "Hoop", ""),
-            ("drop", "Drop", "")
+            ("earrings_R1", "Stud", ""),
+            ("earrings_R2", "Hoop", ""),
+            ("earrings_R3", "Drop", "")
         ],
         update=update_ears
     )

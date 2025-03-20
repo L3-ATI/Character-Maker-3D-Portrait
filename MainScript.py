@@ -145,6 +145,15 @@ def update_facial_shape_keys(self, context):
     }
     
     active_brows = brows_objects.get(self.brows_type)
+    
+    # Sélectionner les cils actifs
+    eyelashes_objects = {
+        "eyelashes1": bpy.data.objects.get("eyelashes1"),
+        "eyelashes2": bpy.data.objects.get("eyelashes2"),
+        "eyelashes3": bpy.data.objects.get("eyelashes3"),
+    }
+    
+    active_eyelashes = eyelashes_objects.get(self.eyelashes_type)
         
     if not head or not head.data.shape_keys:
         print("L'objet 'head' n'a pas de shape keys !")
@@ -156,6 +165,10 @@ def update_facial_shape_keys(self, context):
     
     if not active_brows or not active_brows.data.shape_keys:
         print("L'objet 'eyebrows' n'a pas de shape keys !")
+        return
+    
+    if not active_eyelashes or not active_eyelashes.data.shape_keys:
+        print("L'objet 'eyelashes' sélectionné n'a pas de shape keys !")
         return
 
     # Shape keys associées
@@ -194,6 +207,8 @@ def update_facial_shape_keys(self, context):
             eyes.data.shape_keys.key_blocks[key].value = value
         if key in active_brows.data.shape_keys.key_blocks:
             active_brows.data.shape_keys.key_blocks[key].value = value
+        if key in active_eyelashes.data.shape_keys.key_blocks:
+            active_eyelashes.data.shape_keys.key_blocks[key].value = value
 
     print(f"Shape keys mises à jour pour head, eyes et {self.brows_type}")
 
@@ -254,7 +269,29 @@ def update_brows(self, context):
     # Mettre à jour les shape keys des sourcils actifs
     update_brows_shape_keys(self, context)
 
+def update_eyelashes(self, context):
+    """ Active les sourcils sélectionnés et applique les shape keys uniquement à ceux-ci """
+    
+    # Définition des objets sourcils
+    eyelashes_objects = {
+        "eyelashes1": bpy.data.objects.get("eyelashes1"),
+        "eyelashes2": bpy.data.objects.get("eyelashes2"),
+        "eyelashes3": bpy.data.objects.get("eyelashes3"),
+    }
 
+    # Désactiver tous les sourcils
+    for eyelashes in eyelashes_objects.values():
+        if eyelashes:
+            eyelashes.hide_set(True)
+
+    # Activer uniquement les sourcils sélectionnés
+    active_eyelashes = eyelashes_objects.get(self.eyelashes_type)
+    if active_eyelashes:
+        active_eyelashes.hide_set(False)
+        print(f"Cils activés : {self.eyelashes_type}")
+    
+    # Mettre à jour les shape keys des cils actifs
+    update_facial_shape_keys(self, context)
 
 
 def update_hair(self, context):
@@ -336,23 +373,31 @@ class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
 
         sections = {
             "——— Hair Settings ———": ["hair_base", "bangs"],
+            
             "——— Ear Settings ———": ["ear_type", "earrings_R", "earrings_L", "helix_R", "helix_L"],
-            "——— Eye Settings ———": ["eyelashes", "eye_shape", "pupil_texture"],
+            
+            "——— Eyelashes Settings ———": ["eyelashes_type"],
+            
             "——— Eyebrows Settings ———": [
                 "brows_type", "brows_height", "brows_depth", "brows_proximity",
                 "brows_size", "brows_angle", "brows_thickness", "brows_tilt",
                 "brows_arch", "brows_frown"
             ],
+            
             "——— Eyes Settings ———": [
                 "eyes_proximity", "eyes_height", "eyes_size", "eyes_width",
                 "eyes_length", "eyes_tilt", "eyes_closing"
             ],
+            
             "——— Cheeks Settings ———": [
                 "cheeks_proximity", "cheeks_height", "cheeks_size",
                 "cheeks_width", "jaw_depth"
             ],
+            
             "——— Nose Settings ———": ["nose_height", "nose_width", "nose_angle"],
+            
             "——— Chin Settings ———": ["chin_size", "chin_height"],
+            
             "——— Mouth Settings ———": ["mouth_texture"],
         }
 
@@ -608,12 +653,18 @@ class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
         ],
         update=update_ears
     )
-
-
-
+    
     # Eyelashes
-    eyelashes: bpy.props.BoolProperty(
-        name="Eyelashes", default=True
+    eyelashes_type: bpy.props.EnumProperty(
+        name="Eyelashes Type",
+        items=[
+            ("none", "None", ""),
+            ("eyelashes1", "Simple", ""),
+            ("eyelashes2", "Innocent", ""),
+            ("eyelashes3", "Double Lashes", ""),
+        ],
+        default="eyelashes1",
+        update=update_eyelashes
     )
 
     pupil_texture: bpy.props.EnumProperty(

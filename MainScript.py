@@ -293,6 +293,60 @@ def update_eyelashes(self, context):
     # Mettre à jour les shape keys des cils actifs
     update_facial_shape_keys(self, context)
 
+def update_pupils(self, context):
+    print(f"update_pupils() appelé avec {self.pupils_textures}")
+    """ Change la texture appliquée aux pupilles sans modifier leur géométrie """
+    
+    # Liste des textures attendues
+    expected_textures = ["pupilsText1.png", "pupilsText2.png", "pupilsText3.png"]
+
+    # Vérifier si toutes les textures sont chargées dans Blender
+    missing_textures = [tex for tex in expected_textures if tex not in bpy.data.images]
+
+    if missing_textures:
+        print(f"⚠ Attention : Les textures suivantes ne sont pas chargées dans Blender : {missing_textures}")
+    else:
+        print("✅ Toutes les textures de pupilles sont bien chargées.")
+
+    
+    # Liste des textures disponibles
+    pupils_textures = {
+        "pupil1": bpy.data.images.get("pupilsText1.png"),
+        "pupil2": bpy.data.images.get("pupilsText2.png"),
+        "pupil3": bpy.data.images.get("pupilsText3.png"),
+    }
+
+    # Vérifier si la texture sélectionnée existe
+    selected_texture = pupils_textures.get(self.pupils_textures)
+
+    if not selected_texture:
+        print(f"Erreur : la texture {self.pupils_textures} n'existe pas dans bpy.data.images")
+        return  # Empêche l'application d'une texture inexistante
+
+
+    if selected_texture:
+        # Appliquer la texture aux deux pupilles
+        for pupil_name in ["pupil_R", "pupil_L"]:
+            pupil = bpy.data.objects.get(pupil_name)
+            if pupil and pupil.active_material:
+                mat = pupil.active_material
+                nodes = mat.node_tree.nodes
+
+                texture_node = None
+                for node in nodes:
+                    if node.type == "TEX_IMAGE":
+                        texture_node = node
+                        break  # On sort dès qu'on a trouvé le bon nœud
+                
+                if texture_node:  # Si un nœud a été trouvé
+                    texture_node.image = selected_texture
+                    texture_node.image.reload()  # Rafraîchir l'affichage
+
+                else:
+                    print(f"Attention : Aucun nœud Image Texture trouvé dans {pupil_name}")
+
+
+        print(f"Pupilles activées : {self.pupils_textures}")
 
 def update_hair(self, context):
     """ Active la hairBase sélectionnée, met à jour le modificateur Boolean des bangs et applique un offset aux bangs """
@@ -385,6 +439,7 @@ class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
             ],
             
             "——— Eyes Settings ———": [
+                "pupils_textures",
                 "eyes_proximity", "eyes_height", "eyes_size", "eyes_width",
                 "eyes_length", "eyes_tilt", "eyes_closing"
             ],
@@ -471,6 +526,16 @@ class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
 
 
     # Eyes
+    pupils_textures: bpy.props.EnumProperty(
+        name="Pupils Shape",
+        items=[
+            ("pupil1", "Default", ""),
+            ("pupil2", "Chocked", ""),
+            ("pupil3", "Hypnotized", "")
+        ],
+        update=update_pupils
+    )
+
     eyes_proximity: bpy.props.FloatProperty(
         name="Eyes Proximity", min=-1.0, max=1.0, default=0.0,
         update=update_facial_shape_keys
@@ -665,15 +730,6 @@ class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
         ],
         default="eyelashes1",
         update=update_eyelashes
-    )
-
-    pupil_texture: bpy.props.EnumProperty(
-        name="Pupil Texture",
-        items=[
-            ("default", "Default", ""),
-            ("cat", "Cat", ""),
-            ("star", "Star", "")
-        ]
     )
 
     # Mouth

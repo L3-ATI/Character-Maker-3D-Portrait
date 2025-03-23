@@ -1,4 +1,22 @@
 import bpy
+import bpy.utils.previews
+import os
+
+# Dictionnaire pour stocker les previews
+preview_collections = {}
+
+def load_image(image_name, image_path):
+    """Charge une image personnalisée et la stocke dans la collection de previews"""
+    if not os.path.exists(image_path):
+        print(f"Erreur : L'image {image_path} est introuvable.")
+        return None
+
+    if "main" not in preview_collections:
+        preview_collections["main"] = bpy.utils.previews.new()
+
+    pcoll = preview_collections["main"]
+    img_preview = pcoll.load(image_name, image_path, 'IMAGE')  
+    return img_preview.icon_id
 
 def update_ears(self, context):
     """Met à jour l'oreille et ajuste les boucles d'oreilles en fonction des choix sélectionnés."""
@@ -428,7 +446,7 @@ class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
         sections = {
             "——— Hair Settings ———": ["hair_base", "bangs"],
             
-            "——— Ear Settings ———": ["ear_type", "earrings_R", "earrings_L", "helix_R", "helix_L"],
+            "——— Ears Settings ———": ["ear_type", "earrings_R", "earrings_L", "helix_R", "helix_L"],
             
             "——— Eyelashes Settings ———": ["eyelashes_type"],
             
@@ -455,10 +473,17 @@ class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
             
             "——— Mouth Settings ———": ["mouth_texture"],
         }
-
+        
         for section_name, keys in sections.items():
             box = layout.box()
             box.label(text=section_name)
+
+            # Afficher l'image après le titre "——— Eyes Settings ———"
+            if section_name == "——— Ears Settings ———":
+                row = box.row()
+                if "main" in preview_collections and "icon_ear_default" in preview_collections["main"]:
+                    row.template_icon(preview_collections["main"]["icon_ear_default"].icon_id, scale=10.0)
+
             for key in keys:
                 box.prop(props, key)
 
@@ -747,12 +772,33 @@ classes = [BUSTE_PT_CustomizerPanel, BUSTE_CustomizerProperties]
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
-    bpy.types.Scene.buste_customizer = bpy.props.PointerProperty(type=BUSTE_CustomizerProperties)
+
+    # Charger les images
+    icon_ear_id_1 = load_image("icon_ear_default", r"D:\Documents\2024-2025\Python\S2\Character-Maker-3D-Portrait\Icons\icon_ear_default.png")
+    icon_ear_id_2 = load_image("icon_ear_base_L", r"D:\Documents\2024-2025\Python\S2\Character-Maker-3D-Portrait\Icons\icon_ear_base_L.png")
+    icon_ear_id_3 = load_image("icon_ear_base_R", r"D:\Documents\2024-2025\Python\S2\Character-Maker-3D-Portrait\Icons\icon_ear_base_R.png")
+    icon_ear_id_4 = load_image("icon_ear_lobe_L", r"D:\Documents\2024-2025\Python\S2\Character-Maker-3D-Portrait\Icons\icon_ear_lobe_L.png")
+    icon_ear_id_5 = load_image("icon_ear_lobe_R", r"D:\Documents\2024-2025\Python\S2\Character-Maker-3D-Portrait\Icons\icon_ear_lobe_R.png")
+    icon_ear_id_6 = load_image("icon_ear_helix_L", r"D:\Documents\2024-2025\Python\S2\Character-Maker-3D-Portrait\Icons\icon_ear_helix_L.png")
+    icon_ear_id_7 = load_image("icon_ear_helix_LR", r"D:\Documents\2024-2025\Python\S2\Character-Maker-3D-Portrait\Icons\icon_ear_helix_R.png")
+
+    # Stocker les ID d'icônes
+    bpy.types.Scene.ear_preview_icon_1 = bpy.props.IntProperty(default=icon_ear_id_1 if icon_ear_id_1 else 0)
+    bpy.types.Scene.ear_preview_icon_2 = bpy.props.IntProperty(default=icon_ear_id_2 if icon_ear_id_2 else 0)
+    bpy.types.Scene.ear_preview_icon_3 = bpy.props.IntProperty(default=icon_ear_id_3 if icon_ear_id_3 else 0)
+    bpy.types.Scene.ear_preview_icon_4 = bpy.props.IntProperty(default=icon_ear_id_4 if icon_ear_id_4 else 0)
+    bpy.types.Scene.ear_preview_icon_5 = bpy.props.IntProperty(default=icon_ear_id_5 if icon_ear_id_5 else 0)
+    bpy.types.Scene.ear_preview_icon_6 = bpy.props.IntProperty(default=icon_ear_id_6 if icon_ear_id_6 else 0)
+    bpy.types.Scene.ear_preview_icon_7 = bpy.props.IntProperty(default=icon_ear_id_7 if icon_ear_id_7 else 0)
 
 def unregister():
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
-    del bpy.types.Scene.buste_customizer
+
+    # Nettoyage des previews
+    for pcoll in preview_collections.values():
+        bpy.utils.previews.remove(pcoll)
+    preview_collections.clear()
 
 if __name__ == "__main__":
     register()

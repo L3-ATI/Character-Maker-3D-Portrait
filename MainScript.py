@@ -429,7 +429,29 @@ def update_hair(self, context):
             bangs_obj.location = new_position  # Affectation directe en world space
             print(f"Position absolue appliquée à {selected_bangs} : {new_position}")
 
+class BUSTE_OT_SetEarSection(bpy.types.Operator):
+    bl_idname = "buste.set_ear_section"
+    bl_label = "Set Ear Section"
+    
+    section: bpy.props.StringProperty()
+    
+    def execute(self, context):
+        props = context.scene.buste_customizer
+        props.open_ear_section = self.section
 
+        # Mise à jour de l'image associée
+        if self.section == "ear_type":
+            props.ear_image = "icon_ear_base"
+        elif self.section == "earrings_L":
+            props.ear_image = "icon_ear_lobe_L"
+        elif self.section == "earrings_R":
+            props.ear_image = "icon_ear_lobe_R"
+        elif self.section == "helix_L":
+            props.ear_image = "icon_ear_helix_L"
+        elif self.section == "helix_R":
+            props.ear_image = "icon_ear_helix_R"
+        
+        return {'FINISHED'}
 
 
 class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
@@ -443,52 +465,71 @@ class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
         layout = self.layout
         props = context.scene.buste_customizer
 
-        sections = {
-            "——— Hair Settings ———": ["hair_base", "bangs"],
-            
-            "——— Ears Settings ———": ["ear_type", "earrings_R", "earrings_L", "helix_R", "helix_L"],
-            
-            "——— Eyelashes Settings ———": ["eyelashes_type"],
-            
-            "——— Eyebrows Settings ———": [
-                "brows_type", "brows_height", "brows_depth", "brows_proximity",
-                "brows_size", "brows_angle", "brows_thickness", "brows_tilt",
-                "brows_arch", "brows_frown"
-            ],
-            
-            "——— Eyes Settings ———": [
-                "pupils_textures",
-                "eyes_proximity", "eyes_height", "eyes_size", "eyes_width",
-                "eyes_length", "eyes_tilt", "eyes_closing"
-            ],
-            
-            "——— Cheeks Settings ———": [
-                "cheeks_proximity", "cheeks_height", "cheeks_size",
-                "cheeks_width", "jaw_depth"
-            ],
-            
-            "——— Nose Settings ———": ["nose_height", "nose_width", "nose_angle"],
-            
-            "——— Chin Settings ———": ["chin_size", "chin_height"],
-            
-            "——— Mouth Settings ———": ["mouth_texture"],
-        }
+        # Section Ears
+        box = layout.box()
+        box.label(text="——— Ears Settings ———")
+
+        # Afficher l'image des oreilles
+        row = box.row()
+        if "main" in preview_collections and props.ear_image in preview_collections["main"]:
+            row.template_icon(preview_collections["main"][props.ear_image].icon_id, scale=10.0)
+
+
+        # Ajouter les boutons pour sélectionner la section
+        row = box.row()
+        row.operator("buste.set_ear_section", text="Ears Type").section = "ear_type"
+
+        # Création d'un layout en colonnes pour mieux organiser les boutons
+        split = box.split(factor=0.5)  # Diviser l'espace en deux colonnes
+
+        col_L = split.column()  # Colonne de gauche
+        col_R = split.column()  # Colonne de droite
+
+        # Ajouter les boutons de manière à les aligner verticalement
+        col_L.operator("buste.set_ear_section", text="Right Helix").section = "helix_R"
+        col_L.operator("buste.set_ear_section", text="Right Lobe").section = "earrings_R"
         
-        for section_name, keys in sections.items():
-            box = layout.box()
-            box.label(text=section_name)
+        col_R.operator("buste.set_ear_section", text="Left Helix").section = "helix_L"
+        col_R.operator("buste.set_ear_section", text="Left Lobe").section = "earrings_L"
 
-            # Afficher l'image après le titre "——— Eyes Settings ———"
-            if section_name == "——— Ears Settings ———":
-                row = box.row()
-                if "main" in preview_collections and "icon_ear_default" in preview_collections["main"]:
-                    row.template_icon(preview_collections["main"]["icon_ear_default"].icon_id, scale=10.0)
 
-            for key in keys:
-                box.prop(props, key)
+        # Afficher la propriété sélectionnée
+        if props.open_ear_section == "ear_type":
+            box.prop(props, "ear_type")
+        elif props.open_ear_section == "earrings_L":
+            box.prop(props, "earrings_L")
+        elif props.open_ear_section == "earrings_R":
+            box.prop(props, "earrings_R")
+        elif props.open_ear_section == "helix_L":
+            box.prop(props, "helix_L")
+        elif props.open_ear_section == "helix_R":
+            box.prop(props, "helix_R")
+
 
 
 class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
+    
+    # EAR SETTINGS ____________________________________________________________________________________________
+    
+    open_ear_section: bpy.props.StringProperty(default="ear_type")
+    ear_image: bpy.props.StringProperty(default="icon_ear_default")  # Image par défaut
+    
+    ear_type: bpy.props.EnumProperty(name="Ear Type", items=[("small", "Small", ""), ("large", "Large", "")])
+    earrings_L: bpy.props.EnumProperty(name="Left Lobe", items=[("none", "None", ""), ("stud", "Stud", "")])
+    earrings_R: bpy.props.EnumProperty(name="Right Lobe", items=[("none", "None", ""), ("hoop", "Hoop", "")])
+    helix_L: bpy.props.EnumProperty(name="Left Helix", items=[("none", "None", ""), ("bar", "Bar", "")])
+    helix_R: bpy.props.EnumProperty(name="Right Helix", items=[("none", "None", ""), ("ring", "Ring", "")])
+    
+    ear_image: bpy.props.StringProperty(name="Ear Image", default="icon_ear_default")
+
+    
+    
+    
+    
+    
+    
+    
+    
     
     # Eyebrows
     brows_type: bpy.props.EnumProperty(
@@ -548,8 +589,6 @@ class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
         update=update_brows_shape_keys
     )
 
-
-
     # Eyes
     pupils_textures: bpy.props.EnumProperty(
         name="Pupils Shape",
@@ -596,8 +635,6 @@ class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
         update=update_facial_shape_keys
     )
 
-
-
     # Cheeks & Jaw
     cheeks_proximity: bpy.props.FloatProperty(
         name="Cheeks Proximity", min=-1.0, max=1.0, default=0.0,
@@ -623,8 +660,6 @@ class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
         name="Jaw Depth", min=-1.0, max=1.0, default=0.0,
         update=update_facial_shape_keys
     )
-
-
 
     # Nose
     nose_height: bpy.props.FloatProperty(
@@ -653,8 +688,6 @@ class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
         update=update_facial_shape_keys
     )
 
-
-
     # Hair
     hair_base: bpy.props.EnumProperty(
         name="Base Hair",
@@ -680,8 +713,6 @@ class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
         ],
         update=update_hair
     )
-
-
 
     # Ears
     ear_type: bpy.props.EnumProperty(
@@ -767,29 +798,41 @@ class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
         ]
     )
 
-classes = [BUSTE_PT_CustomizerPanel, BUSTE_CustomizerProperties]
+classes = [BUSTE_PT_CustomizerPanel, BUSTE_CustomizerProperties, BUSTE_OT_SetEarSection]
 
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
+    
+    bpy.types.Scene.buste_customizer = bpy.props.PointerProperty(type=BUSTE_CustomizerProperties)
 
-    # Charger les images
-    icon_ear_id_1 = load_image("icon_ear_default", r"D:\Documents\2024-2025\Python\S2\Character-Maker-3D-Portrait\Icons\icon_ear_default.png")
-    icon_ear_id_2 = load_image("icon_ear_base_L", r"D:\Documents\2024-2025\Python\S2\Character-Maker-3D-Portrait\Icons\icon_ear_base_L.png")
-    icon_ear_id_3 = load_image("icon_ear_base_R", r"D:\Documents\2024-2025\Python\S2\Character-Maker-3D-Portrait\Icons\icon_ear_base_R.png")
-    icon_ear_id_4 = load_image("icon_ear_lobe_L", r"D:\Documents\2024-2025\Python\S2\Character-Maker-3D-Portrait\Icons\icon_ear_lobe_L.png")
-    icon_ear_id_5 = load_image("icon_ear_lobe_R", r"D:\Documents\2024-2025\Python\S2\Character-Maker-3D-Portrait\Icons\icon_ear_lobe_R.png")
-    icon_ear_id_6 = load_image("icon_ear_helix_L", r"D:\Documents\2024-2025\Python\S2\Character-Maker-3D-Portrait\Icons\icon_ear_helix_L.png")
-    icon_ear_id_7 = load_image("icon_ear_helix_LR", r"D:\Documents\2024-2025\Python\S2\Character-Maker-3D-Portrait\Icons\icon_ear_helix_R.png")
+    # Définir le dossier contenant les icônes (modifiable facilement)
+    ICON_DIR = r"D:\Git Repositories\Character-Maker-3D-Portrait\Icons"
 
-    # Stocker les ID d'icônes
-    bpy.types.Scene.ear_preview_icon_1 = bpy.props.IntProperty(default=icon_ear_id_1 if icon_ear_id_1 else 0)
-    bpy.types.Scene.ear_preview_icon_2 = bpy.props.IntProperty(default=icon_ear_id_2 if icon_ear_id_2 else 0)
-    bpy.types.Scene.ear_preview_icon_3 = bpy.props.IntProperty(default=icon_ear_id_3 if icon_ear_id_3 else 0)
-    bpy.types.Scene.ear_preview_icon_4 = bpy.props.IntProperty(default=icon_ear_id_4 if icon_ear_id_4 else 0)
-    bpy.types.Scene.ear_preview_icon_5 = bpy.props.IntProperty(default=icon_ear_id_5 if icon_ear_id_5 else 0)
-    bpy.types.Scene.ear_preview_icon_6 = bpy.props.IntProperty(default=icon_ear_id_6 if icon_ear_id_6 else 0)
-    bpy.types.Scene.ear_preview_icon_7 = bpy.props.IntProperty(default=icon_ear_id_7 if icon_ear_id_7 else 0)
+    # Dictionnaire des images à charger
+    icon_files = {
+        "icon_ear_default": "icon_ear_default.png",
+        "icon_ear_base": "icon_ear_base.png",
+        "icon_ear_lobe_L": "icon_ear_lobe_L.png",
+        "icon_ear_lobe_R": "icon_ear_lobe_R.png",
+        "icon_ear_helix_L": "icon_ear_helix_L.png",
+        "icon_ear_helix_R": "icon_ear_helix_R.png",
+    }
+
+    # Charger les images dynamiquement
+    icon_ids = {}
+    for name, filename in icon_files.items():
+        icon_path = os.path.join(ICON_DIR, filename)
+        icon_ids[name] = load_image(name, icon_path) or 0  # Assure que la valeur par défaut est 0
+
+    # Stocker les ID d'icônes dans bpy.types.Scene
+    bpy.types.Scene.ear_preview_icon_1 = bpy.props.IntProperty(default=icon_ids["icon_ear_default"])
+    bpy.types.Scene.ear_preview_icon_2 = bpy.props.IntProperty(default=icon_ids["icon_ear_base"])
+    bpy.types.Scene.ear_preview_icon_3 = bpy.props.IntProperty(default=icon_ids["icon_ear_lobe_L"])
+    bpy.types.Scene.ear_preview_icon_4 = bpy.props.IntProperty(default=icon_ids["icon_ear_lobe_R"])
+    bpy.types.Scene.ear_preview_icon_5 = bpy.props.IntProperty(default=icon_ids["icon_ear_helix_L"])
+    bpy.types.Scene.ear_preview_icon_6 = bpy.props.IntProperty(default=icon_ids["icon_ear_helix_R"])
+
 
 def unregister():
     for cls in reversed(classes):
@@ -798,7 +841,6 @@ def unregister():
     # Nettoyage des previews
     for pcoll in preview_collections.values():
         bpy.utils.previews.remove(pcoll)
-    preview_collections.clear()
 
 if __name__ == "__main__":
     register()

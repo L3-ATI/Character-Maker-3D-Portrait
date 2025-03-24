@@ -450,9 +450,34 @@ class BUSTE_OT_SetEarSection(bpy.types.Operator):
             props.ear_image = "icon_ear_helix_L"
         elif self.section == "helix_R":
             props.ear_image = "icon_ear_helix_R"
+            
+        elif self.section == "helix_both":
+            props.ear_image = "icon_ear_default"  # Utiliser une image générique
+            props.open_ear_section = "helix_both"
+
+        elif self.section == "lobe_both":
+            props.ear_image = "icon_ear_default"
+            props.open_ear_section = "lobe_both"
+
         
         return {'FINISHED'}
+    
+class BUSTE_OT_ToggleSymmetry(bpy.types.Operator):
+    """Active ou désactive la symétrie"""
+    bl_idname = "buste.toggle_symmetry"
+    bl_label = "Toggle Symmetry"
 
+    target: bpy.props.StringProperty()
+
+    def execute(self, context):
+        props = context.scene.buste_customizer
+
+        if self.target == "helix":
+            props.helix_both = not props.helix_both
+        elif self.target == "lobe":
+            props.lobe_both = not props.lobe_both
+
+        return {'FINISHED'}
 
 class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
     bl_label = "Character Maker 3D Portrait"
@@ -472,25 +497,48 @@ class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
         # Afficher l'image des oreilles
         row = box.row()
         if "main" in preview_collections and props.ear_image in preview_collections["main"]:
-            row.template_icon(preview_collections["main"][props.ear_image].icon_id, scale=10.0)
+            row.template_icon(preview_collections["main"][props.ear_image].icon_id, scale=7.0)
+
 
 
         # Ajouter les boutons pour sélectionner la section
         row = box.row()
         row.operator("buste.set_ear_section", text="Ears Type").section = "ear_type"
 
-        # Création d'un layout en colonnes pour mieux organiser les boutons
-        split = box.split(factor=0.5)  # Diviser l'espace en deux colonnes
 
-        col_L = split.column()  # Colonne de gauche
-        col_R = split.column()  # Colonne de droite
 
-        # Ajouter les boutons de manière à les aligner verticalement
-        col_L.operator("buste.set_ear_section", text="Right Helix").section = "helix_R"
-        col_L.operator("buste.set_ear_section", text="Right Lobe").section = "earrings_R"
-        
-        col_R.operator("buste.set_ear_section", text="Left Helix").section = "helix_L"
-        col_R.operator("buste.set_ear_section", text="Left Lobe").section = "earrings_L"
+        row = box.row()
+        split = row.split(factor=0.3)  # 20% d’espace à gauche
+        split.label(text="")  # Espace vide
+        split = split.split(factor=0.6)  # 60% pour le bouton
+        split.operator("buste.toggle_symmetry", text="Helix Earrings").target = "helix"
+        row = box.row()
+        split = row.split(factor=0.3)  # 20% d’espace à gauche
+        split.label(text="")  # Espace vide
+        split = split.split(factor=0.6)  # 60% pour le bouton
+        split.operator("buste.toggle_symmetry", text="Lobe Earrings").target = "lobe"
+
+
+
+       # Afficher les boutons selon la symétrie activée ou non
+        if props.helix_both:
+            box.operator("buste.set_ear_section", text="Helix (Both)").section = "helix_both"
+        else:
+            split = box.split(factor=0.5)
+            col_L = split.column()
+            col_R = split.column()
+            col_L.operator("buste.set_ear_section", text="Right Helix").section = "helix_R"
+            col_R.operator("buste.set_ear_section", text="Left Helix").section = "helix_L"
+
+        if props.lobe_both:
+            box.operator("buste.set_ear_section", text="Lobe (Both)").section = "lobe_both"
+        else:
+            split = box.split(factor=0.5)
+            col_L = split.column()
+            col_R = split.column()
+            col_L.operator("buste.set_ear_section", text="Right Lobe").section = "earrings_R"
+            col_R.operator("buste.set_ear_section", text="Left Lobe").section = "earrings_L"
+
 
 
         # Afficher la propriété sélectionnée
@@ -504,23 +552,59 @@ class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
             box.prop(props, "helix_L")
         elif props.open_ear_section == "helix_R":
             box.prop(props, "helix_R")
+        elif props.open_ear_section == "helix_both":
+            box.prop(props, "helix_both")  # Afficher la propriété symétrique
+        elif props.open_ear_section == "lobe_both":
+            box.prop(props, "lobe_both")  # Afficher la propriété symétrique
+
 
 
 
 class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
-    
-    # EAR SETTINGS ____________________________________________________________________________________________
-    
+    # EAR SETTINGS
     open_ear_section: bpy.props.StringProperty(default="ear_type")
     ear_image: bpy.props.StringProperty(default="icon_ear_default")  # Image par défaut
-    
+
     ear_type: bpy.props.EnumProperty(name="Ear Type", items=[("small", "Small", ""), ("large", "Large", "")])
     earrings_L: bpy.props.EnumProperty(name="Left Lobe", items=[("none", "None", ""), ("stud", "Stud", "")])
     earrings_R: bpy.props.EnumProperty(name="Right Lobe", items=[("none", "None", ""), ("hoop", "Hoop", "")])
     helix_L: bpy.props.EnumProperty(name="Left Helix", items=[("none", "None", ""), ("bar", "Bar", "")])
     helix_R: bpy.props.EnumProperty(name="Right Helix", items=[("none", "None", ""), ("ring", "Ring", "")])
+
+    # Nouvelles propriétés pour stocker les valeurs des deux côtés en mode symétrique
+    helix_both: bpy.props.EnumProperty(name="Helix Both", items=[("none", "None", ""), ("bar", "Bar", ""), ("ring", "Ring", "")])
+    lobe_both: bpy.props.EnumProperty(name="Lobe Both", items=[("none", "None", ""), ("stud", "Stud", ""), ("hoop", "Hoop", "")])
+
+    def update_ear_symmetry(self, context):
+        if self.symetrize_helix:
+            self.helix_L = self.helix_both
+            self.helix_R = self.helix_both
+        if self.symetrize_lobe:
+            self.earrings_L = self.lobe_both
+            self.earrings_R = self.lobe_both
+
+    ear_type: bpy.props.EnumProperty(
+        name="Ear Type",
+        items=[
+            ("human", "Human", ""),
+            ("elfe", "Elfe", ""),
+            ("fae", "Fae", "")
+        ],
+        update=update_ears
+    )
     
-    ear_image: bpy.props.StringProperty(name="Ear Image", default="icon_ear_default")
+    helix_both: bpy.props.EnumProperty(
+        name="Helix Both",
+        items=[("none", "None", ""), ("bar", "Bar", ""), ("ring", "Ring", "")],
+        update=update_ear_symmetry
+    )
+
+    lobe_both: bpy.props.EnumProperty(
+        name="Lobe Both",
+        items=[("none", "None", ""), ("stud", "Stud", ""), ("hoop", "Hoop", "")],
+        update=update_ear_symmetry
+    )
+    
 
     
     
@@ -714,16 +798,6 @@ class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
         update=update_hair
     )
 
-    # Ears
-    ear_type: bpy.props.EnumProperty(
-        name="Ear Type",
-        items=[
-            ("human", "Human", ""),
-            ("elfe", "Elfe", ""),
-            ("fae", "Fae", "")
-        ],
-        update=update_ears
-    )
 
     # Boucles d'oreilles du lobe
     earrings_L: bpy.props.EnumProperty(
@@ -798,7 +872,7 @@ class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
         ]
     )
 
-classes = [BUSTE_PT_CustomizerPanel, BUSTE_CustomizerProperties, BUSTE_OT_SetEarSection]
+classes = [BUSTE_PT_CustomizerPanel, BUSTE_CustomizerProperties, BUSTE_OT_SetEarSection, BUSTE_OT_ToggleSymmetry]
 
 def register():
     for cls in classes:

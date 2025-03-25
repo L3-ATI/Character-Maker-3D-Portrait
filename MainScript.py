@@ -151,9 +151,15 @@ def update_ears(self, context):
             helix_obj_R.rotation_euler = (helix_rotation_offset[0], -helix_rotation_offset[1], -helix_rotation_offset[2])  # Inversion en X et Z
 
 def update_facial_shape_keys(self, context):
+    
+    
     """ Met à jour les shape keys du visage et des yeux en même temps. """
     head = bpy.data.objects.get("head")
     eyes = bpy.data.objects.get("eyes")
+    
+    
+    print(head.data.shape_keys.key_blocks.keys())
+    print(eyes.data.shape_keys.key_blocks.keys())
     
     # Sélectionner les sourcils actifs
     brows_objects = {
@@ -191,31 +197,19 @@ def update_facial_shape_keys(self, context):
 
     # Shape keys associées
     shape_keys = {
-        
         "brows_height": self.brows_height,
         "brows_depth": self.brows_depth,
         
-        "eyes_proximity": self.eyes_proximity,
         "eyes_height": self.eyes_height,
-        "eyes_size": self.eyes_size,
-        "eyes_width": self.eyes_width,
-        "eyes_length": self.eyes_length,
-        "eyes_tilt": self.eyes_tilt,
-        "eyes_closing": self.eyes_closing,
+        "eyes_distance": self.eyes_distance,
         
-        "cheeks_proximity": self.cheeks_proximity,
-        "cheeks_height": self.cheeks_height,
-        "cheeks_size": self.cheeks_size,
-        "cheeks_width": self.cheeks_width,
-        "jaw_depth": self.jaw_depth,
+        "corner_EXT": self.corner_EXT,
+        "corner_INT": self.corner_INT,
         
-        "nose_height": self.nose_height,
-        "nose_width": self.nose_width,
-        "nose_angle": self.nose_angle,
-        
-        "chin_size": self.chin_size,
-        "chin_height": self.chin_height,
-    }
+        "eyelid_T_height": self.eyelid_T_height,
+        "eyelid_T_angle": self.eyelid_T_angle,
+        "eyelid_B_height": self.eyelid_B_height,
+        "eyelid_B_angle": self.eyelid_B_angle }
 
     # Appliquer les shape keys pour tous les objets (head, eyes, et sourcils actifs)
     for key, value in shape_keys.items():
@@ -453,6 +447,29 @@ class BUSTE_OT_SetEarSection(bpy.types.Operator):
         
         return {'FINISHED'}
 
+class BUSTE_OT_SetEyeSection(bpy.types.Operator):
+    bl_idname = "buste.set_eye_section"
+    bl_label = "Set Eye Section"
+    
+    section: bpy.props.StringProperty()
+    
+    def execute(self, context):
+        props = context.scene.buste_customizer
+        props.open_eye_section = self.section
+
+        # Mise à jour de l'image associée
+        if self.section == "eye_type":
+            props.eye_image = "icon_eye_default"
+        elif self.section == "corner_EXT":
+            props.eye_image = "icon_eye_corner_EXT"
+        elif self.section == "corner_INT":
+            props.eye_image = "icon_eye_corner_INT"
+        elif self.section == "eyelid_T":
+            props.eye_image = "icon_eye_eyelid_T"
+        elif self.section == "eyelid_B":
+            props.eye_image = "icon_eye_eyelid_B"
+        
+        return {'FINISHED'}
 
 class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
     bl_label = "Character Maker 3D Portrait"
@@ -465,20 +482,16 @@ class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
         layout = self.layout
         props = context.scene.buste_customizer
 
+        # EARS SETTINGS ____________________________________________________________________________________________
         box = layout.box()
-        
         row = box.row()
         row.alignment = 'CENTER'
         row.label(text="——— Ears Settings ———")
-
-
         row = box.row()
         row.operator("buste.set_ear_section", text="Ears Type").section = "ear_type"
-
         row = box.row()
         if "main" in preview_collections and props.ear_image in preview_collections["main"]:
             row.template_icon(preview_collections["main"][props.ear_image].icon_id, scale=5.0)
-
         split = box.split(factor=0.5)
         col_L = split.column()
         col_R = split.column()
@@ -486,8 +499,6 @@ class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
         col_L.operator("buste.set_ear_section", text="Right Lobe").section = "earrings_R"
         col_R.operator("buste.set_ear_section", text="Left Helix").section = "helix_L"
         col_R.operator("buste.set_ear_section", text="Left Lobe").section = "earrings_L"
-
-
         if props.open_ear_section == "ear_type":
             split = box.split(factor=0.5)
             col_L = split.column()
@@ -518,9 +529,78 @@ class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
             col_L.label(text="Right Helix Earrings :")
             col_R = split.column()
             col_R.prop(props, "helix_R", text="")
+        
+        # EYES SETTINGS ____________________________________________________________________________________________
+        box = layout.box()
+        row = box.row()
+        row.alignment = 'CENTER'
+        row.label(text="——— Eyes Settings ———")
+        row = box.row()
+        row.operator("buste.set_eye_section", text="Eye Type").section = "eye_type"
+        row = box.row()
+        if "main" in preview_collections and props.eye_image in preview_collections["main"]:
+            row.template_icon(preview_collections["main"][props.eye_image].icon_id, scale=5.0)
+        split = box.split(factor=0.5)
+        col_L = split.column()
+        col_R = split.column()
+        col_L.operator("buste.set_eye_section", text="Lateral Canthus").section = "corner_EXT"
+        col_R.operator("buste.set_eye_section", text="Medial Canthus").section = "corner_INT"
+        col_L.operator("buste.set_eye_section", text="Top Eyelid").section = "eyelid_T"
+        col_R.operator("buste.set_eye_section", text="Bottom Eyelid").section = "eyelid_B"
+        if props.open_eye_section == "eye_type":
+            split = box.split(factor=0.5)
+            col_L = split.column()
+            col_L.label(text="Eyes Type :")
+            col_R = split.column()
+            col_R.prop(props, "eye_type", text="")
+        elif props.open_eye_section == "corner_EXT":
+            split = box.split(factor=0.5)
+            col_L = split.column()
+            col_L.label(text="Lateral Canthus :")
+            col_R = split.column()
+            col_R.prop(props, "corner_EXT", text="")
+        elif props.open_eye_section == "corner_INT":
+            split = box.split(factor=0.5)
+            col_L = split.column()
+            col_L.label(text="Medial Canthus :")
+            col_R = split.column()
+            col_R.prop(props, "corner_INT", text="")
+        elif props.open_eye_section == "eyelid_T":
+            split = box.split(factor=0.5)
+            col_L = split.column()
+            col_L.label(text="Top Eyelid :")
+            col_R = split.column()
+            col_R.prop(props, "eyelid_T_height", text="Height")
+            col_R.prop(props, "eyelid_T_angle", text="Angle")
+        elif props.open_eye_section == "eyelid_B":
+            split = box.split(factor=0.5)
+            col_L = split.column()
+            col_L.label(text="Bottom Eyelid :")
+            col_R = split.column()
+            col_R.prop(props, "eyelid_B_height", text="Height")
+            col_R.prop(props, "eyelid_B_angle", text="Angle")
+            
+        # Additional sections for the new properties
+        split = box.split(factor=0.5)
+        col_L = split.column()
+        col_R = split.column()
 
+        col_L.label(text="Pupils Shape:")
+        col_R.prop(props, "pupils_textures", text="")
 
+        split = box.split(factor=0.5)
+        col_L = split.column()
+        col_R = split.column()
 
+        col_L.label(text="Eyes Height:")
+        col_R.prop(props, "eyes_height", text="")
+
+        split = box.split(factor=0.5)
+        col_L = split.column()
+        col_R = split.column()
+
+        col_L.label(text="Eyes Distance:")
+        col_R.prop(props, "eyes_distance", text="")
 
 class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
     
@@ -561,55 +641,9 @@ class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
             ("helix_R3", "Triple Ring", "")
         ], update=update_ears)
     
-    # BROWS SETTINGS ____________________________________________________________________________________________
-    brows_type: bpy.props.EnumProperty(
-        name="Eyebrows Type",
-        items=[
-            ("eyebrows1", "Eyebrows 1", ""),
-            ("eyebrows2", "Eyebrows 2", ""),
-            ("eyebrows3", "Eyebrows 3", ""),
-        ],
-        default="eyebrows1",
-        update=update_brows
-    )
-    brows_height: bpy.props.FloatProperty(
-        name="Eyebrows Height", min=-1.0, max=1.0, default=0.0,
-        update=update_facial_shape_keys
-    )
-    brows_depth: bpy.props.FloatProperty(
-        name="Eyebrows Depth", min=-1.0, max=1.0, default=0.0,
-        update=update_facial_shape_keys
-    )
-    brows_proximity: bpy.props.FloatProperty(
-        name="Eyebrows Proximity", min=-1.0, max=1.0, default=0.0,
-        update=update_brows_shape_keys
-    )
-    brows_size: bpy.props.FloatProperty(
-        name="Eyebrows Size", min=-1.0, max=1.0, default=0.0,
-        update=update_brows_shape_keys
-    )
-    brows_angle: bpy.props.FloatProperty(
-        name="Eyebrows Angle", min=-1.0, max=1.0, default=0.0,
-        update=update_brows_shape_keys
-    )
-    brows_thickness: bpy.props.FloatProperty(
-        name="Eyebrows Thickness", min=-1.0, max=1.0, default=0.0,
-        update=update_brows_shape_keys
-    )
-    brows_tilt: bpy.props.FloatProperty(
-        name="Eyebrows Tilt", min=-1.0, max=1.0, default=0.0,
-        update=update_brows_shape_keys
-    )
-    brows_arch: bpy.props.FloatProperty(
-        name="Eyebrows Arch", min=-1.0, max=1.0, default=0.0,
-        update=update_brows_shape_keys
-    )
-    brows_frown: bpy.props.FloatProperty(
-        name="Eyebrows Frown", min=-1.0, max=1.0, default=0.0,
-        update=update_brows_shape_keys
-    )
-
     # EYES SETTINGS ____________________________________________________________________________________________
+    open_eye_section: bpy.props.StringProperty(default="eye_type")
+    eye_image: bpy.props.StringProperty(name="Eye Image", default="icon_eye_default")
     pupils_textures: bpy.props.EnumProperty(
         name="Pupils Shape",
         items=[
@@ -619,81 +653,39 @@ class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
         ],
         update=update_pupils
     )
-    eyes_proximity: bpy.props.FloatProperty(
-        name="Eyes Proximity", min=-1.0, max=1.0, default=0.0,
-        update=update_facial_shape_keys
-    )
     eyes_height: bpy.props.FloatProperty(
         name="Eyes Height", min=-1.0, max=1.0, default=0.0,
         update=update_facial_shape_keys
     )
-    eyes_size: bpy.props.FloatProperty(
-        name="Eyes Size", min=-1.0, max=1.0, default=0.0,
+    eyes_distance: bpy.props.FloatProperty(
+        name="Eyes Distance", min=-1.0, max=1.0, default=0.0,
         update=update_facial_shape_keys
     )
-    eyes_width: bpy.props.FloatProperty(
-        name="Eyes Width", min=-1.0, max=1.0, default=0.0,
+    corner_EXT: bpy.props.FloatProperty(
+        name="Lateral Canthus", min=-1.0, max=1.0, default=0.0,
         update=update_facial_shape_keys
     )
-    eyes_length: bpy.props.FloatProperty(
-        name="Eyes Length", min=-1.0, max=1.0, default=0.0,
+    corner_INT: bpy.props.FloatProperty(
+        name="Medial Canthus", min=-1.0, max=1.0, default=0.0,
         update=update_facial_shape_keys
     )
-    eyes_tilt: bpy.props.FloatProperty(
-        name="Eyes Tilt", min=-1.0, max=1.0, default=0.0,
+    eyelid_T_height: bpy.props.FloatProperty(
+        name="Top Eyelid Height", min=-1.0, max=1.0, default=0.0,
         update=update_facial_shape_keys
     )
-    eyes_closing: bpy.props.FloatProperty(
-        name="Eyes Closing", min=0.0, max=1.0, default=0.0,
+    eyelid_T_angle: bpy.props.FloatProperty(
+        name="Top Eyelid Angle", min=-1.0, max=1.0, default=0.0,
         update=update_facial_shape_keys
     )
-
-    # CHEEKS & JAW SETTINGS ____________________________________________________________________________________________
-    cheeks_proximity: bpy.props.FloatProperty(
-        name="Cheeks Proximity", min=-1.0, max=1.0, default=0.0,
+    eyelid_B_height: bpy.props.FloatProperty(
+        name="Bottom Eyelid Height", min=-1.0, max=1.0, default=0.0,
         update=update_facial_shape_keys
     )
-    cheeks_height: bpy.props.FloatProperty(
-        name="Cheeks Height", min=-1.0, max=1.0, default=0.0,
+    eyelid_B_angle: bpy.props.FloatProperty(
+        name="Bottom Eyelid Angle", min=-1.0, max=1.0, default=0.0,
         update=update_facial_shape_keys
     )
-    cheeks_size: bpy.props.FloatProperty(
-        name="Cheeks Size", min=-1.0, max=1.0, default=0.0,
-        update=update_facial_shape_keys
-    )
-    cheeks_width: bpy.props.FloatProperty(
-        name="Cheeks Width", min=-1.0, max=1.0, default=0.0,
-        update=update_facial_shape_keys
-    )
-    jaw_depth: bpy.props.FloatProperty(
-        name="Jaw Depth", min=-1.0, max=1.0, default=0.0,
-        update=update_facial_shape_keys
-    )
-
-    # NOSE SETTINGS ____________________________________________________________________________________________
-    nose_height: bpy.props.FloatProperty(
-        name="Nose Height", min=-1.0, max=1.0, default=0.0,
-        update=update_facial_shape_keys
-    )
-    nose_width: bpy.props.FloatProperty(
-        name="Nose Width", min=-1.0, max=1.0, default=0.0,
-        update=update_facial_shape_keys
-    )
-    nose_angle: bpy.props.FloatProperty(
-        name="Nose Angle", min=-1.0, max=1.0, default=0.0,
-        update=update_facial_shape_keys
-    )
-
-    # CHIN SETTINGS ____________________________________________________________________________________________
-    chin_size: bpy.props.FloatProperty(
-        name="Chin Size", min=-1.0, max=1.0, default=0.0,
-        update=update_facial_shape_keys
-    )
-    chin_height: bpy.props.FloatProperty(
-        name="Chin Height", min=-1.0, max=1.0, default=0.0,
-        update=update_facial_shape_keys
-    )
-
+    
     # HAIR SETTINGS ____________________________________________________________________________________________
     hair_base: bpy.props.EnumProperty(
         name="Base Hair",
@@ -738,7 +730,7 @@ class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
         update=update_hair
     )
 
-classes = [BUSTE_PT_CustomizerPanel, BUSTE_CustomizerProperties, BUSTE_OT_SetEarSection]
+classes = [BUSTE_PT_CustomizerPanel, BUSTE_CustomizerProperties, BUSTE_OT_SetEarSection, BUSTE_OT_SetEyeSection]
 
 def register():
     for cls in classes:
@@ -757,6 +749,16 @@ def register():
         "icon_ear_lobe_R": "icon_ear_lobe_R.png",
         "icon_ear_helix_L": "icon_ear_helix_L.png",
         "icon_ear_helix_R": "icon_ear_helix_R.png",
+        
+        "icon_eye_default": "icon_eye_default.png",
+        "icon_eye_all": "icon_eye_all.png",
+        "icon_eye_corner_EXT": "icon_eye_corner_EXT.png",
+        "icon_eye_corner_INT": "icon_eye_corner_INT.png",
+        "icon_eye_eyelid_T": "icon_eye_eyelid_T.png",
+        "icon_eye_eyelid_B": "icon_eye_eyelid_B.png",
+        
+        "icon_eye_pupil": "icon_eye_pupil.png",
+        "icon_eye_eyelashes": "icon_eye_eyelashes.png",
     }
 
     # Charger les images dynamiquement
@@ -773,6 +775,15 @@ def register():
     bpy.types.Scene.ear_preview_icon_5 = bpy.props.IntProperty(default=icon_ids["icon_ear_helix_L"])
     bpy.types.Scene.ear_preview_icon_6 = bpy.props.IntProperty(default=icon_ids["icon_ear_helix_R"])
 
+    # Ajouter les ID d'icônes pour les yeux
+    bpy.types.Scene.eye_preview_icon_1 = bpy.props.IntProperty(default=icon_ids["icon_eye_default"])
+    bpy.types.Scene.eye_preview_icon_2 = bpy.props.IntProperty(default=icon_ids["icon_eye_all"])
+    bpy.types.Scene.eye_preview_icon_3 = bpy.props.IntProperty(default=icon_ids["icon_eye_corner_EXT"])
+    bpy.types.Scene.eye_preview_icon_4 = bpy.props.IntProperty(default=icon_ids["icon_eye_corner_INT"])
+    bpy.types.Scene.eye_preview_icon_5 = bpy.props.IntProperty(default=icon_ids["icon_eye_eyelid_T"])
+    bpy.types.Scene.eye_preview_icon_6 = bpy.props.IntProperty(default=icon_ids["icon_eye_eyelid_B"])
+    bpy.types.Scene.eye_preview_icon_7 = bpy.props.IntProperty(default=icon_ids["icon_eye_pupil"])
+    bpy.types.Scene.eye_preview_icon_8 = bpy.props.IntProperty(default=icon_ids["icon_eye_eyelashes"])
 
 def unregister():
     for cls in reversed(classes):

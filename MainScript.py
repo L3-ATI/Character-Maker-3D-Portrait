@@ -435,15 +435,15 @@ class BUSTE_OT_SetEarSection(bpy.types.Operator):
 
         # Mise à jour de l'image associée
         if self.section == "ear_type":
-            props.ear_image = "icon_ear_base"
+            props.ear_image = "ear_base"
         elif self.section == "earrings_L":
-            props.ear_image = "icon_ear_lobe_L"
+            props.ear_image = "ear_lobe_L"
         elif self.section == "earrings_R":
-            props.ear_image = "icon_ear_lobe_R"
+            props.ear_image = "ear_lobe_R"
         elif self.section == "helix_L":
-            props.ear_image = "icon_ear_helix_L"
+            props.ear_image = "ear_helix_L"
         elif self.section == "helix_R":
-            props.ear_image = "icon_ear_helix_R"
+            props.ear_image = "ear_helix_R"
         
         return {'FINISHED'}
 
@@ -459,17 +459,17 @@ class BUSTE_OT_SetEyeSection(bpy.types.Operator):
 
         # Mise à jour de l'image associée
         if self.section == "eyelashes_type":
-            props.eye_image = "icon_eye_eyelashes"
+            props.eye_image = "eyes_eyelashes"
         elif self.section == "pupils_textures":
-            props.eye_image = "icon_eye_pupil"
+            props.eye_image = "eyes_pupil"
         elif self.section == "corner_EXT":
-            props.eye_image = "icon_eye_corner_EXT"
+            props.eye_image = "eyes_corner_EXT"
         elif self.section == "corner_INT":
-            props.eye_image = "icon_eye_corner_INT"
+            props.eye_image = "eyes_corner_INT"
         elif self.section == "eyelid_T":
-            props.eye_image = "icon_eye_eyelid_T"
+            props.eye_image = "eyes_eyelid_T"
         elif self.section == "eyelid_B":
-            props.eye_image = "icon_eye_eyelid_B"
+            props.eye_image = "eyse_eyelid_B"
         elif self.section == "":
             props.eye_image = ""
         elif self.section == "":
@@ -503,7 +503,7 @@ class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
         row.operator("buste.set_ear_section", text="Ears Type").section = "ear_type"
         row = box.row()
         if "main" in preview_collections and props.ear_image in preview_collections["main"]:
-            row.template_icon(preview_collections["main"][props.ear_image].icon_id, scale=5.0)
+            row.template_icon(preview_collections["main"][props.ear_image].icon_id, scale=6.0)
         split = box.split(factor=0.5)
         col_L = split.column()
         col_R = split.column()
@@ -552,7 +552,7 @@ class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
         row.operator("buste.set_eye_section", text="Pupils").section = "pupils_textures"
         row = box.row()
         if "main" in preview_collections and props.eye_image in preview_collections["main"]:
-            row.template_icon(preview_collections["main"][props.eye_image].icon_id, scale=4.0)
+            row.template_icon(preview_collections["main"][props.eye_image].icon_id, scale=6.0)
         split = box.split(factor=0.5)
         col_L = split.column()
         col_R = split.column()
@@ -625,7 +625,7 @@ class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
     
     # EARS SETTINGS ____________________________________________________________________________________________
     open_ear_section: bpy.props.StringProperty(default="ear_type")
-    ear_image: bpy.props.StringProperty(name="Ear Image", default="icon_ear_default")
+    ear_image: bpy.props.StringProperty(name="Ear Image", default="ear_default")
     ear_type: bpy.props.EnumProperty(name="Ear Type", items=[
             ("human", "Human", ""),
             ("elfe", "Elfe", ""),
@@ -662,7 +662,7 @@ class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
     
     # EYES SETTINGS ____________________________________________________________________________________________
     open_eye_section: bpy.props.StringProperty(default="eye_type")
-    eye_image: bpy.props.StringProperty(name="Eye Image", default="icon_eye_default")
+    eye_image: bpy.props.StringProperty(name="Eye Image", default="eyes_default")
     pupils_textures: bpy.props.EnumProperty(
         name="Pupils Shape",
         items=[
@@ -836,22 +836,33 @@ def register():
 
     # Dictionnaire des images à charger
     icon_files = {
-        "icon_ear_default": "icon_ear_default.png",
-        "icon_ear_base": "icon_ear_base.png",
-        "icon_ear_lobe_L": "icon_ear_lobe_L.png",
-        "icon_ear_lobe_R": "icon_ear_lobe_R.png",
-        "icon_ear_helix_L": "icon_ear_helix_L.png",
-        "icon_ear_helix_R": "icon_ear_helix_R.png",
-        
-        "icon_eye_default": "icon_eye_default.png",
-        "icon_eye_all": "icon_eye_all.png",
-        "icon_eye_corner_EXT": "icon_eye_corner_EXT.png",
-        "icon_eye_corner_INT": "icon_eye_corner_INT.png",
-        "icon_eye_eyelid_T": "icon_eye_eyelid_T.png",
-        "icon_eye_eyelid_B": "icon_eye_eyelid_B.png",
-        
-        "icon_eye_pupil": "icon_eye_pupil.png",
-        "icon_eye_eyelashes": "icon_eye_eyelashes.png",
+        "brows_angle": "brows_angle.png",
+        "brows_arch": "brows_arch.png",
+        "brows_default": "brows_default.png",
+        "brows_depth": "brows_depth.png",
+        "brows_frown": "brows_frown.png",
+        "brows_height": "brows_height.png",
+        "brows_proximity": "brows_proximity.png",
+        "brows_size": "brows_size.png",
+        "brows_thickness": "brows_thickness.png",
+        "brows_tilt": "brows_tilt.png",
+
+        "ear_base": "ear_base.png",
+        "ear_default": "ear_default.png",
+        "ear_helix_L": "ear_helix_L.png",
+        "ear_helix_R": "ear_helix_R.png",
+        "ear_lobe_L": "ear_lobe_L.png",
+        "ear_lobe_R": "ear_lobe_R.png",
+
+        "eyes_corner_EXT": "eyes_corner_EXT.png",
+        "eyes_corner_INT": "eyes_corner_INT.png",
+        "eyes_default": "eyes_default.png",
+        "eyes_distance": "eyes_distance.png",  # Correction orthographe
+        "eyes_eyelashes": "eyes_eyelashes.png",
+        "eyes_eyelid_B": "eyes_eyelid_B.png",
+        "eyes_eyelid_T": "eyes_eyelid_T.png",
+        "eyes_height": "eyes_height.png",
+        "eyes_pupil": "eyes_pupil.png",
     }
 
     # Charger les images dynamiquement
@@ -860,23 +871,35 @@ def register():
         icon_path = os.path.join(ICON_DIR, filename)
         icon_ids[name] = load_image(name, icon_path) or 0  # Assure que la valeur par défaut est 0
 
-    # Stocker les ID d'icônes dans bpy.types.Scene
-    bpy.types.Scene.ear_preview_icon_1 = bpy.props.IntProperty(default=icon_ids["icon_ear_default"])
-    bpy.types.Scene.ear_preview_icon_2 = bpy.props.IntProperty(default=icon_ids["icon_ear_base"])
-    bpy.types.Scene.ear_preview_icon_3 = bpy.props.IntProperty(default=icon_ids["icon_ear_lobe_L"])
-    bpy.types.Scene.ear_preview_icon_4 = bpy.props.IntProperty(default=icon_ids["icon_ear_lobe_R"])
-    bpy.types.Scene.ear_preview_icon_5 = bpy.props.IntProperty(default=icon_ids["icon_ear_helix_L"])
-    bpy.types.Scene.ear_preview_icon_6 = bpy.props.IntProperty(default=icon_ids["icon_ear_helix_R"])
+    # Oreilles ID
+    bpy.types.Scene.ear_preview_icon_1 = bpy.props.IntProperty(default=icon_ids["ear_default"])
+    bpy.types.Scene.ear_preview_icon_2 = bpy.props.IntProperty(default=icon_ids["ear_base"])
+    bpy.types.Scene.ear_preview_icon_3 = bpy.props.IntProperty(default=icon_ids["ear_lobe_L"])
+    bpy.types.Scene.ear_preview_icon_4 = bpy.props.IntProperty(default=icon_ids["ear_lobe_R"])
+    bpy.types.Scene.ear_preview_icon_5 = bpy.props.IntProperty(default=icon_ids["ear_helix_L"])
+    bpy.types.Scene.ear_preview_icon_6 = bpy.props.IntProperty(default=icon_ids["ear_helix_R"])
 
-    # Ajouter les ID d'icônes pour les yeux
-    bpy.types.Scene.eye_preview_icon_1 = bpy.props.IntProperty(default=icon_ids["icon_eye_default"])
-    bpy.types.Scene.eye_preview_icon_2 = bpy.props.IntProperty(default=icon_ids["icon_eye_all"])
-    bpy.types.Scene.eye_preview_icon_3 = bpy.props.IntProperty(default=icon_ids["icon_eye_corner_EXT"])
-    bpy.types.Scene.eye_preview_icon_4 = bpy.props.IntProperty(default=icon_ids["icon_eye_corner_INT"])
-    bpy.types.Scene.eye_preview_icon_5 = bpy.props.IntProperty(default=icon_ids["icon_eye_eyelid_T"])
-    bpy.types.Scene.eye_preview_icon_6 = bpy.props.IntProperty(default=icon_ids["icon_eye_eyelid_B"])
-    bpy.types.Scene.eye_preview_icon_7 = bpy.props.IntProperty(default=icon_ids["icon_eye_pupil"])
-    bpy.types.Scene.eye_preview_icon_8 = bpy.props.IntProperty(default=icon_ids["icon_eye_eyelashes"])
+    # Yeux ID
+    bpy.types.Scene.eye_preview_icon_1 = bpy.props.IntProperty(default=icon_ids["eyes_default"])
+    bpy.types.Scene.eye_preview_icon_2 = bpy.props.IntProperty(default=icon_ids["eyes_height"])
+    bpy.types.Scene.eye_preview_icon_3 = bpy.props.IntProperty(default=icon_ids["eyes_corner_EXT"])
+    bpy.types.Scene.eye_preview_icon_4 = bpy.props.IntProperty(default=icon_ids["eyes_corner_INT"])
+    bpy.types.Scene.eye_preview_icon_5 = bpy.props.IntProperty(default=icon_ids["eyes_eyelid_T"])
+    bpy.types.Scene.eye_preview_icon_6 = bpy.props.IntProperty(default=icon_ids["eyes_eyelid_B"])
+    bpy.types.Scene.eye_preview_icon_7 = bpy.props.IntProperty(default=icon_ids["eyes_pupil"])
+    bpy.types.Scene.eye_preview_icon_8 = bpy.props.IntProperty(default=icon_ids["eyes_eyelashes"])
+
+    # Sourcils ID
+    bpy.types.Scene.brows_preview_icon_1 = bpy.props.IntProperty(default=icon_ids["brows_default"])
+    bpy.types.Scene.brows_preview_icon_2 = bpy.props.IntProperty(default=icon_ids["brows_angle"])
+    bpy.types.Scene.brows_preview_icon_3 = bpy.props.IntProperty(default=icon_ids["brows_arch"])
+    bpy.types.Scene.brows_preview_icon_4 = bpy.props.IntProperty(default=icon_ids["brows_depth"])
+    bpy.types.Scene.brows_preview_icon_5 = bpy.props.IntProperty(default=icon_ids["brows_frown"])
+    bpy.types.Scene.brows_preview_icon_6 = bpy.props.IntProperty(default=icon_ids["brows_height"])
+    bpy.types.Scene.brows_preview_icon_7 = bpy.props.IntProperty(default=icon_ids["brows_proximity"])
+    bpy.types.Scene.brows_preview_icon_8 = bpy.props.IntProperty(default=icon_ids["brows_size"])
+    bpy.types.Scene.brows_preview_icon_9 = bpy.props.IntProperty(default=icon_ids["brows_thickness"])
+    bpy.types.Scene.brows_preview_icon_10 = bpy.props.IntProperty(default=icon_ids["brows_tilt"])
 
 def unregister():
     for cls in reversed(classes):

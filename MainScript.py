@@ -458,8 +458,10 @@ class BUSTE_OT_SetEyeSection(bpy.types.Operator):
         props.open_eye_section = self.section
 
         # Mise à jour de l'image associée
-        if self.section == "eye_type":
-            props.eye_image = "icon_eye_default"
+        if self.section == "eyelashes_type":
+            props.eye_image = "icon_eye_eyelashes"
+        elif self.section == "pupils_textures":
+            props.eye_image = "icon_eye_pupil"
         elif self.section == "corner_EXT":
             props.eye_image = "icon_eye_corner_EXT"
         elif self.section == "corner_INT":
@@ -468,6 +470,16 @@ class BUSTE_OT_SetEyeSection(bpy.types.Operator):
             props.eye_image = "icon_eye_eyelid_T"
         elif self.section == "eyelid_B":
             props.eye_image = "icon_eye_eyelid_B"
+        elif self.section == "":
+            props.eye_image = ""
+        elif self.section == "":
+            props.eye_image = ""
+        elif self.section == "":
+            props.eye_image = ""
+        elif self.section == "":
+            props.eye_image = ""
+        elif self.section == "":
+            props.eye_image = ""
         
         return {'FINISHED'}
 
@@ -535,11 +547,12 @@ class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
         row = box.row()
         row.alignment = 'CENTER'
         row.label(text="——— Eyes Settings ———")
-        row = box.row()
-        row.operator("buste.set_eye_section", text="Eye Type").section = "eye_type"
+        row = box.column()
+        row.operator("buste.set_eye_section", text="Eyelashes").section = "eyelashes_type"
+        row.operator("buste.set_eye_section", text="Pupils").section = "pupils_textures"
         row = box.row()
         if "main" in preview_collections and props.eye_image in preview_collections["main"]:
-            row.template_icon(preview_collections["main"][props.eye_image].icon_id, scale=5.0)
+            row.template_icon(preview_collections["main"][props.eye_image].icon_id, scale=4.0)
         split = box.split(factor=0.5)
         col_L = split.column()
         col_R = split.column()
@@ -547,12 +560,18 @@ class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
         col_R.operator("buste.set_eye_section", text="Medial Canthus").section = "corner_INT"
         col_L.operator("buste.set_eye_section", text="Top Eyelid").section = "eyelid_T"
         col_R.operator("buste.set_eye_section", text="Bottom Eyelid").section = "eyelid_B"
-        if props.open_eye_section == "eye_type":
+        if props.open_eye_section == "eyelashes_type":
             split = box.split(factor=0.5)
             col_L = split.column()
-            col_L.label(text="Eyes Type :")
+            col_L.label(text="Eyelashes Type :")
             col_R = split.column()
-            col_R.prop(props, "eye_type", text="")
+            col_R.prop(props, "eyelashes_type", text="")
+        elif props.open_eye_section == "pupils_textures":
+            split = box.split(factor=0.5)
+            col_L = split.column()
+            col_L.label(text="Pupils Shape :")
+            col_R = split.column()
+            col_R.prop(props, "pupils_textures", text="")
         elif props.open_eye_section == "corner_EXT":
             split = box.split(factor=0.5)
             col_L = split.column()
@@ -581,26 +600,26 @@ class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
             col_R.prop(props, "eyelid_B_angle", text="Angle")
             
         # Additional sections for the new properties
-        split = box.split(factor=0.5)
-        col_L = split.column()
-        col_R = split.column()
+        #split = box.split(factor=0.5)
+        #col_L = split.column()
+        #col_R = split.column()
 
-        col_L.label(text="Pupils Shape:")
-        col_R.prop(props, "pupils_textures", text="")
+        #col_L.label(text="Pupils Shape:")
+        #col_R.prop(props, "pupils_textures", text="")
 
-        split = box.split(factor=0.5)
-        col_L = split.column()
-        col_R = split.column()
+        #split = box.split(factor=0.5)
+        #col_L = split.column()
+        #col_R = split.column()
 
-        col_L.label(text="Eyes Height:")
-        col_R.prop(props, "eyes_height", text="")
+        #col_L.label(text="Eyes Height:")
+        #col_R.prop(props, "eyes_height", text="")
 
-        split = box.split(factor=0.5)
-        col_L = split.column()
-        col_R = split.column()
+        #split = box.split(factor=0.5)
+        #col_L = split.column()
+        #col_R = split.column()
 
-        col_L.label(text="Eyes Distance:")
-        col_R.prop(props, "eyes_distance", text="")
+        #col_L.label(text="Eyes Distance:")
+        #col_R.prop(props, "eyes_distance", text="")
 
 class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
     
@@ -653,6 +672,17 @@ class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
         ],
         update=update_pupils
     )
+    eyelashes_type: bpy.props.EnumProperty(
+        name="Eyelashes Type",
+        items=[
+            ("none", "None", ""),
+            ("eyelashes1", "Simple", ""),
+            ("eyelashes2", "Innocent", ""),
+            ("eyelashes3", "Double Lashes", ""),
+        ],
+        default="eyelashes1",
+        update=update_eyelashes
+    )
     eyes_height: bpy.props.FloatProperty(
         name="Eyes Height", min=-1.0, max=1.0, default=0.0,
         update=update_facial_shape_keys
@@ -685,6 +715,69 @@ class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
         name="Bottom Eyelid Angle", min=-1.0, max=1.0, default=0.0,
         update=update_facial_shape_keys
     )
+    
+    # BROWS SETTINGS ____________________________________________________________________________________________
+    brows_type: bpy.props.EnumProperty(
+        name="Eyebrows Type",
+        items=[
+            ("eyebrows1", "Eyebrows 1", ""),
+            ("eyebrows2", "Eyebrows 2", ""),
+        ],
+        default="eyebrows1",
+        update=update_brows
+    )
+
+    brows_height: bpy.props.FloatProperty(
+        name="Eyebrows Height", min=-1.0, max=1.0, default=0.0,
+        update=update_facial_shape_keys
+    )
+
+    brows_depth: bpy.props.FloatProperty(
+        name="Eyebrows Depth", min=-1.0, max=1.0, default=0.0,
+        update=update_facial_shape_keys
+    )
+
+    brows_proximity: bpy.props.FloatProperty(
+        name="Eyebrows Proximity", min=-1.0, max=1.0, default=0.0,
+        update=update_brows_shape_keys
+    )
+
+    brows_size: bpy.props.FloatProperty(
+        name="Eyebrows Size", min=-1.0, max=1.0, default=0.0,
+        update=update_brows_shape_keys
+    )
+
+    brows_angle: bpy.props.FloatProperty(
+        name="Eyebrows Angle", min=-1.0, max=1.0, default=0.0,
+        update=update_brows_shape_keys
+    )
+
+    brows_thickness: bpy.props.FloatProperty(
+        name="Eyebrows Thickness", min=-1.0, max=1.0, default=0.0,
+        update=update_brows_shape_keys
+    )
+
+    brows_tilt: bpy.props.FloatProperty(
+        name="Eyebrows Tilt", min=-1.0, max=1.0, default=0.0,
+        update=update_brows_shape_keys
+    )
+
+    brows_arch: bpy.props.FloatProperty(
+        name="Eyebrows Arch", min=-1.0, max=1.0, default=0.0,
+        update=update_brows_shape_keys
+    )
+
+    brows_frown: bpy.props.FloatProperty(
+        name="Eyebrows Frown", min=-1.0, max=1.0, default=0.0,
+        update=update_brows_shape_keys
+    )
+    
+    
+    
+    
+    
+    
+    
     
     # HAIR SETTINGS ____________________________________________________________________________________________
     hair_base: bpy.props.EnumProperty(

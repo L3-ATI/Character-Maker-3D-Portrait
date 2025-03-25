@@ -465,73 +465,103 @@ class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
         layout = self.layout
         props = context.scene.buste_customizer
 
-        # Section Ears
         box = layout.box()
-        box.label(text="——— Ears Settings ———")
-
-        # Afficher l'image des oreilles
+        
         row = box.row()
-        if "main" in preview_collections and props.ear_image in preview_collections["main"]:
-            row.template_icon(preview_collections["main"][props.ear_image].icon_id, scale=10.0)
+        row.alignment = 'CENTER'
+        row.label(text="——— Ears Settings ———")
 
 
-        # Ajouter les boutons pour sélectionner la section
         row = box.row()
         row.operator("buste.set_ear_section", text="Ears Type").section = "ear_type"
 
-        # Création d'un layout en colonnes pour mieux organiser les boutons
-        split = box.split(factor=0.5)  # Diviser l'espace en deux colonnes
+        row = box.row()
+        if "main" in preview_collections and props.ear_image in preview_collections["main"]:
+            row.template_icon(preview_collections["main"][props.ear_image].icon_id, scale=5.0)
 
-        col_L = split.column()  # Colonne de gauche
-        col_R = split.column()  # Colonne de droite
-
-        # Ajouter les boutons de manière à les aligner verticalement
+        split = box.split(factor=0.5)
+        col_L = split.column()
+        col_R = split.column()
         col_L.operator("buste.set_ear_section", text="Right Helix").section = "helix_R"
         col_L.operator("buste.set_ear_section", text="Right Lobe").section = "earrings_R"
-        
         col_R.operator("buste.set_ear_section", text="Left Helix").section = "helix_L"
         col_R.operator("buste.set_ear_section", text="Left Lobe").section = "earrings_L"
 
 
-        # Afficher la propriété sélectionnée
         if props.open_ear_section == "ear_type":
-            box.prop(props, "ear_type")
+            split = box.split(factor=0.5)
+            col_L = split.column()
+            col_L.label(text="Ears Type :")
+            col_R = split.column()
+            col_R.prop(props, "ear_type", text="")
         elif props.open_ear_section == "earrings_L":
-            box.prop(props, "earrings_L")
+            split = box.split(factor=0.5)
+            col_L = split.column()
+            col_L.label(text="Left Lobe Earrings :")
+            col_R = split.column()
+            col_R.prop(props, "earrings_L", text="")
         elif props.open_ear_section == "earrings_R":
-            box.prop(props, "earrings_R")
+            split = box.split(factor=0.5)
+            col_L = split.column()
+            col_L.label(text="Right Lobe Earrings :")
+            col_R = split.column()
+            col_R.prop(props, "earrings_R", text="")
         elif props.open_ear_section == "helix_L":
-            box.prop(props, "helix_L")
+            split = box.split(factor=0.5)
+            col_L = split.column()
+            col_L.label(text="Left Helix Earrings :")
+            col_R = split.column()
+            col_R.prop(props, "helix_L", text="")
         elif props.open_ear_section == "helix_R":
-            box.prop(props, "helix_R")
+            split = box.split(factor=0.5)
+            col_L = split.column()
+            col_L.label(text="Right Helix Earrings :")
+            col_R = split.column()
+            col_R.prop(props, "helix_R", text="")
+
 
 
 
 class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
     
-    # EAR SETTINGS ____________________________________________________________________________________________
-    
+    # EARS SETTINGS ____________________________________________________________________________________________
     open_ear_section: bpy.props.StringProperty(default="ear_type")
-    ear_image: bpy.props.StringProperty(default="icon_ear_default")  # Image par défaut
-    
-    ear_type: bpy.props.EnumProperty(name="Ear Type", items=[("small", "Small", ""), ("large", "Large", "")])
-    earrings_L: bpy.props.EnumProperty(name="Left Lobe", items=[("none", "None", ""), ("stud", "Stud", "")])
-    earrings_R: bpy.props.EnumProperty(name="Right Lobe", items=[("none", "None", ""), ("hoop", "Hoop", "")])
-    helix_L: bpy.props.EnumProperty(name="Left Helix", items=[("none", "None", ""), ("bar", "Bar", "")])
-    helix_R: bpy.props.EnumProperty(name="Right Helix", items=[("none", "None", ""), ("ring", "Ring", "")])
-    
     ear_image: bpy.props.StringProperty(name="Ear Image", default="icon_ear_default")
-
+    ear_type: bpy.props.EnumProperty(name="Ear Type", items=[
+            ("human", "Human", ""),
+            ("elfe", "Elfe", ""),
+            ("fae", "Fae", "")
+        ], update=update_ears)
+    earrings_L: bpy.props.EnumProperty(name="Left Lobe Earrings", items=[
+            ("none", "None", ""),
+            ("earrings_L1", "Stud", ""),
+            ("earrings_L2", "Hoop", ""),
+            ("earrings_L3", "Diamond Drop", ""),
+            ("earrings_L4", "Ringued Drop", ""),
+            ("earrings_L5", "Long Drop", "")
+        ],update=update_ears)
+    earrings_R: bpy.props.EnumProperty(name="Right Lobe Earrings", items=[
+            ("none", "None", ""),
+            ("earrings_R1", "Stud", ""),
+            ("earrings_R2", "Hoop", ""),
+            ("earrings_R3", "Diamond Drop", ""),
+            ("earrings_R4", "Ringued Drop", ""),
+            ("earrings_R5", "Long Drop", "")
+        ], update=update_ears)
+    helix_L: bpy.props.EnumProperty(name="Left Helix Earrings", items=[
+            ("none", "None", ""),
+            ("helix_L1", "Ring", ""),
+            ("helix_L2", "Double Ring", ""),
+            ("helix_L3", "Triple Ring", "")
+        ], update=update_ears)
+    helix_R: bpy.props.EnumProperty(name="Right Helix Earrings", items=[
+            ("none", "None", ""),
+            ("helix_R1", "Ring", ""),
+            ("helix_R2", "Double Ring", ""),
+            ("helix_R3", "Triple Ring", "")
+        ], update=update_ears)
     
-    
-    
-    
-    
-    
-    
-    
-    
-    # Eyebrows
+    # BROWS SETTINGS ____________________________________________________________________________________________
     brows_type: bpy.props.EnumProperty(
         name="Eyebrows Type",
         items=[
@@ -542,54 +572,44 @@ class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
         default="eyebrows1",
         update=update_brows
     )
-
-
     brows_height: bpy.props.FloatProperty(
         name="Eyebrows Height", min=-1.0, max=1.0, default=0.0,
         update=update_facial_shape_keys
     )
-
     brows_depth: bpy.props.FloatProperty(
         name="Eyebrows Depth", min=-1.0, max=1.0, default=0.0,
         update=update_facial_shape_keys
     )
-
     brows_proximity: bpy.props.FloatProperty(
         name="Eyebrows Proximity", min=-1.0, max=1.0, default=0.0,
         update=update_brows_shape_keys
     )
-
     brows_size: bpy.props.FloatProperty(
         name="Eyebrows Size", min=-1.0, max=1.0, default=0.0,
         update=update_brows_shape_keys
     )
-
     brows_angle: bpy.props.FloatProperty(
         name="Eyebrows Angle", min=-1.0, max=1.0, default=0.0,
         update=update_brows_shape_keys
     )
-
     brows_thickness: bpy.props.FloatProperty(
         name="Eyebrows Thickness", min=-1.0, max=1.0, default=0.0,
         update=update_brows_shape_keys
     )
-
     brows_tilt: bpy.props.FloatProperty(
         name="Eyebrows Tilt", min=-1.0, max=1.0, default=0.0,
         update=update_brows_shape_keys
     )
-
     brows_arch: bpy.props.FloatProperty(
         name="Eyebrows Arch", min=-1.0, max=1.0, default=0.0,
         update=update_brows_shape_keys
     )
-
     brows_frown: bpy.props.FloatProperty(
         name="Eyebrows Frown", min=-1.0, max=1.0, default=0.0,
         update=update_brows_shape_keys
     )
 
-    # Eyes
+    # EYES SETTINGS ____________________________________________________________________________________________
     pupils_textures: bpy.props.EnumProperty(
         name="Pupils Shape",
         items=[
@@ -599,96 +619,82 @@ class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
         ],
         update=update_pupils
     )
-
     eyes_proximity: bpy.props.FloatProperty(
         name="Eyes Proximity", min=-1.0, max=1.0, default=0.0,
         update=update_facial_shape_keys
     )
-
     eyes_height: bpy.props.FloatProperty(
         name="Eyes Height", min=-1.0, max=1.0, default=0.0,
         update=update_facial_shape_keys
     )
-
     eyes_size: bpy.props.FloatProperty(
         name="Eyes Size", min=-1.0, max=1.0, default=0.0,
         update=update_facial_shape_keys
     )
-
     eyes_width: bpy.props.FloatProperty(
         name="Eyes Width", min=-1.0, max=1.0, default=0.0,
         update=update_facial_shape_keys
     )
-
     eyes_length: bpy.props.FloatProperty(
         name="Eyes Length", min=-1.0, max=1.0, default=0.0,
         update=update_facial_shape_keys
     )
-
     eyes_tilt: bpy.props.FloatProperty(
         name="Eyes Tilt", min=-1.0, max=1.0, default=0.0,
         update=update_facial_shape_keys
     )
-
     eyes_closing: bpy.props.FloatProperty(
         name="Eyes Closing", min=0.0, max=1.0, default=0.0,
         update=update_facial_shape_keys
     )
 
-    # Cheeks & Jaw
+    # CHEEKS & JAW SETTINGS ____________________________________________________________________________________________
     cheeks_proximity: bpy.props.FloatProperty(
         name="Cheeks Proximity", min=-1.0, max=1.0, default=0.0,
         update=update_facial_shape_keys
     )
-
     cheeks_height: bpy.props.FloatProperty(
         name="Cheeks Height", min=-1.0, max=1.0, default=0.0,
         update=update_facial_shape_keys
     )
-
     cheeks_size: bpy.props.FloatProperty(
         name="Cheeks Size", min=-1.0, max=1.0, default=0.0,
         update=update_facial_shape_keys
     )
-
     cheeks_width: bpy.props.FloatProperty(
         name="Cheeks Width", min=-1.0, max=1.0, default=0.0,
         update=update_facial_shape_keys
     )
-
     jaw_depth: bpy.props.FloatProperty(
         name="Jaw Depth", min=-1.0, max=1.0, default=0.0,
         update=update_facial_shape_keys
     )
 
-    # Nose
+    # NOSE SETTINGS ____________________________________________________________________________________________
     nose_height: bpy.props.FloatProperty(
         name="Nose Height", min=-1.0, max=1.0, default=0.0,
         update=update_facial_shape_keys
     )
-
     nose_width: bpy.props.FloatProperty(
         name="Nose Width", min=-1.0, max=1.0, default=0.0,
         update=update_facial_shape_keys
     )
-
     nose_angle: bpy.props.FloatProperty(
         name="Nose Angle", min=-1.0, max=1.0, default=0.0,
         update=update_facial_shape_keys
     )
 
-    # Chin
+    # CHIN SETTINGS ____________________________________________________________________________________________
     chin_size: bpy.props.FloatProperty(
         name="Chin Size", min=-1.0, max=1.0, default=0.0,
         update=update_facial_shape_keys
     )
-
     chin_height: bpy.props.FloatProperty(
         name="Chin Height", min=-1.0, max=1.0, default=0.0,
         update=update_facial_shape_keys
     )
 
-    # Hair
+    # HAIR SETTINGS ____________________________________________________________________________________________
     hair_base: bpy.props.EnumProperty(
         name="Base Hair",
         items=[
@@ -701,101 +707,35 @@ class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
         ],
         update=update_hair
     )
-
     bangs: bpy.props.EnumProperty(
         name="Bangs",
         items=[
             ("none", "None", ""),
             ("boolBangs1", "Shell", ""),
             ("boolBangs2", "Side", ""),
-            ("boolBangs3", "Heart", ""),
-            ("boolBangs4", "Asymmetrical Heart", "")
+            ("boolBangs3", "Straight", "")
         ],
         update=update_hair
     )
-
-    # Ears
-    ear_type: bpy.props.EnumProperty(
-        name="Ear Type",
+    hair_color: bpy.props.EnumProperty(
+        name="Hair Color",
         items=[
-            ("human", "Human", ""),
-            ("elfe", "Elfe", ""),
-            ("fae", "Fae", "")
+            ("black", "Black", ""),
+            ("blonde", "Blonde", ""),
+            ("brown", "Brown", ""),
+            ("red", "Red", ""),
+            ("gray", "Gray", ""),
+            ("white", "White", "")
         ],
-        update=update_ears
+        update=update_hair
     )
-
-    # Boucles d'oreilles du lobe
-    earrings_L: bpy.props.EnumProperty(
-        name="Left Lobe Earrings",
-        items=[
-            ("none", "None", ""),
-            ("earrings_L1", "Stud", ""),
-            ("earrings_L2", "Hoop", ""),
-            ("earrings_L3", "Diamond Drop", ""),
-            ("earrings_L4", "Ringued Drop", ""),
-            ("earrings_L5", "Long Drop", "")
-        ],
-        update=update_ears
+    hair_length: bpy.props.FloatProperty(
+        name="Hair Length", min=0.0, max=2.0, default=1.0,
+        update=update_hair
     )
-
-    earrings_R: bpy.props.EnumProperty(
-        name="Right Lobe Earrings",
-        items=[
-            ("none", "None", ""),
-            ("earrings_R1", "Stud", ""),
-            ("earrings_R2", "Hoop", ""),
-            ("earrings_R3", "Diamond Drop", ""),
-            ("earrings_R4", "Ringued Drop", ""),
-            ("earrings_R5", "Long Drop", "")
-        ],
-        update=update_ears
-    )
-
-    # Boucles d'oreilles de l'hélix
-    helix_L: bpy.props.EnumProperty(
-        name="Left Helix Earrings",
-        items=[
-            ("none", "None", ""),
-            ("helix_L1", "Ring", ""),
-            ("helix_L2", "Double Ring", ""),
-            ("helix_L3", "Triple Ring", "")
-        ],
-        update=update_ears
-    )
-
-    helix_R: bpy.props.EnumProperty(
-        name="Right Helix Earrings",
-        items=[
-            ("none", "None", ""),
-            ("helix_R1", "Ring", ""),
-            ("helix_R2", "Double Ring", ""),
-            ("helix_R3", "Triple Ring", "")
-        ],
-        update=update_ears
-    )
-    
-    # Eyelashes
-    eyelashes_type: bpy.props.EnumProperty(
-        name="Eyelashes Type",
-        items=[
-            ("none", "None", ""),
-            ("eyelashes1", "Simple", ""),
-            ("eyelashes2", "Innocent", ""),
-            ("eyelashes3", "Double Lashes", ""),
-        ],
-        default="eyelashes1",
-        update=update_eyelashes
-    )
-
-    # Mouth
-    mouth_texture: bpy.props.EnumProperty(
-        name="Mouth Texture",
-        items=[
-            ("default", "Default", ""),
-            ("smile", "Smile", ""),
-            ("serious", "Serious", "")
-        ]
+    hair_thickness: bpy.props.FloatProperty(
+        name="Hair Thickness", min=0.0, max=1.0, default=0.5,
+        update=update_hair
     )
 
 classes = [BUSTE_PT_CustomizerPanel, BUSTE_CustomizerProperties, BUSTE_OT_SetEarSection]

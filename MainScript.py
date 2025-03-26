@@ -469,11 +469,11 @@ class BUSTE_OT_SetEyeSection(bpy.types.Operator):
         elif self.section == "eyelid_T":
             props.eye_image = "eyes_eyelid_T"
         elif self.section == "eyelid_B":
-            props.eye_image = "eyse_eyelid_B"
-        elif self.section == "":
-            props.eye_image = ""
-        elif self.section == "":
-            props.eye_image = ""
+            props.eye_image = "eyes_eyelid_B"
+        elif self.section == "eyes_distance":
+            props.eye_image = "eyes_distance"
+        elif self.section == "eyes_height":
+            props.eye_image = "eyes_height"
         elif self.section == "":
             props.eye_image = ""
         elif self.section == "":
@@ -508,8 +508,11 @@ class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
         col_L = split.column()
         col_R = split.column()
         col_L.operator("buste.set_ear_section", text="Right Helix").section = "helix_R"
-        col_L.operator("buste.set_ear_section", text="Right Lobe").section = "earrings_R"
         col_R.operator("buste.set_ear_section", text="Left Helix").section = "helix_L"
+        split = box.split(factor=0.5)
+        col_L = split.column()
+        col_R = split.column()
+        col_L.operator("buste.set_ear_section", text="Right Lobe").section = "earrings_R"
         col_R.operator("buste.set_ear_section", text="Left Lobe").section = "earrings_L"
         if props.open_ear_section == "ear_type":
             split = box.split(factor=0.5)
@@ -542,6 +545,9 @@ class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
             col_R = split.column()
             col_R.prop(props, "helix_R", text="")
         
+        layout.separator()
+        layout.separator()
+
         # EYES SETTINGS ____________________________________________________________________________________________
         box = layout.box()
         row = box.row()
@@ -553,13 +559,16 @@ class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
         row = box.row()
         if "main" in preview_collections and props.eye_image in preview_collections["main"]:
             row.template_icon(preview_collections["main"][props.eye_image].icon_id, scale=6.0)
+        box.operator("buste.set_eye_section", text="Top Eyelid").section = "eyelid_T"
         split = box.split(factor=0.5)
         col_L = split.column()
         col_R = split.column()
-        col_L.operator("buste.set_eye_section", text="Lateral Canthus").section = "corner_EXT"
-        col_R.operator("buste.set_eye_section", text="Medial Canthus").section = "corner_INT"
-        col_L.operator("buste.set_eye_section", text="Top Eyelid").section = "eyelid_T"
-        col_R.operator("buste.set_eye_section", text="Bottom Eyelid").section = "eyelid_B"
+        col_L.operator("buste.set_eye_section", text="Medial Canthus").section = "corner_INT"
+        col_R.operator("buste.set_eye_section", text="Lateral Canthus").section = "corner_EXT"
+        box.operator("buste.set_eye_section", text="Bottom Eyelid").section = "eyelid_B"
+        row = box.column()
+        row.operator("buste.set_eye_section", text="Eyes Height").section = "eyes_height"
+        row.operator("buste.set_eye_section", text="Eyes Distance").section = "eyes_distance"
         if props.open_eye_section == "eyelashes_type":
             split = box.split(factor=0.5)
             col_L = split.column()
@@ -598,28 +607,18 @@ class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
             col_R = split.column()
             col_R.prop(props, "eyelid_B_height", text="Height")
             col_R.prop(props, "eyelid_B_angle", text="Angle")
-            
-        # Additional sections for the new properties
-        #split = box.split(factor=0.5)
-        #col_L = split.column()
-        #col_R = split.column()
-
-        #col_L.label(text="Pupils Shape:")
-        #col_R.prop(props, "pupils_textures", text="")
-
-        #split = box.split(factor=0.5)
-        #col_L = split.column()
-        #col_R = split.column()
-
-        #col_L.label(text="Eyes Height:")
-        #col_R.prop(props, "eyes_height", text="")
-
-        #split = box.split(factor=0.5)
-        #col_L = split.column()
-        #col_R = split.column()
-
-        #col_L.label(text="Eyes Distance:")
-        #col_R.prop(props, "eyes_distance", text="")
+        elif props.open_eye_section == "eyes_height":
+            split = box.split(factor=0.5)
+            col_L = split.column()
+            col_L.label(text="Eyes height :")
+            col_R = split.column()
+            col_R.prop(props, "eyes_height", text="")
+        elif props.open_eye_section == "eyes_distance":
+            split = box.split(factor=0.5)
+            col_L = split.column()
+            col_L.label(text="Eyes Distance :")
+            col_R = split.column()
+            col_R.prop(props, "eyes_distance", text="")
 
 class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
     

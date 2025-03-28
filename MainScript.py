@@ -396,6 +396,10 @@ def update_hair(self, context):
         obj = bpy.data.objects.get(obj_name)
         if obj:
             obj.hide_set(True)  # Cache l'objet
+    
+    if self.hair_base == "bald":
+        print("Personnage chauve")
+        return  # Évite d'exécuter le reste du code
 
     # Activer uniquement la hairBase sélectionnée
     if selected_hair:
@@ -515,6 +519,30 @@ class BUSTE_OT_SetBrowSection(bpy.types.Operator):
         elif self.section == "brows_frown":
             props.brow_image = "brows_frown"
 
+        return {'FINISHED'}
+    
+class BUSTE_OT_SetHairSection(bpy.types.Operator):
+    bl_idname = "buste.set_hair_section"
+    bl_label = "Set Hair Section"
+    
+    section: bpy.props.StringProperty()
+    
+    def execute(self, context):
+        props = context.scene.buste_customizer
+        props.open_hair_section = self.section
+
+        # Mise à jour de l'image associée
+        if self.section == "hair_default":
+            props.hair_image = "hair_default"
+        elif self.section == "hair_base":
+            props.hair_image = "hair_base"
+        elif self.section == "bangs":
+            props.hair_image = "hair_bangs"
+        elif self.section == "strands":
+            props.hair_image = "hair_strands"
+        elif self.section == "back":
+            props.hair_image = "hair_back"
+        
         return {'FINISHED'}
 
 class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
@@ -749,7 +777,38 @@ class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
             col_R = split.column()
             col_R.prop(props, "brows_depth", text="")
         box.separator()
+        
+        layout.separator()
+        layout.separator()
 
+        # HAIR SETTINGS ____________________________________________________________________________________________
+        box = layout.box()
+        row = box.row()
+        row.alignment = 'CENTER'
+        row.label(text="——— Hair Settings ———")
+        row = box.row()
+        row.operator("buste.set_hair_section", text="Base").section = "hair_base"
+        row = box.row()
+        box.separator()
+        if "main" in preview_collections and props.hair_image in preview_collections["main"]:
+            row.template_icon(preview_collections["main"][props.hair_image].icon_id, scale=6.0)
+        row = box.row()
+        row.operator("buste.set_hair_section", text="Bangs").section = "bangs"
+        box.separator()
+        box.separator()
+        if props.open_hair_section == "hair_base":
+            split = box.split(factor=0.5)
+            col_L = split.column()
+            col_L.label(text="Hair Base :")
+            col_R = split.column()
+            col_R.prop(props, "hair_base", text="")
+        elif props.open_hair_section == "bangs":
+            split = box.split(factor=0.5)
+            col_L = split.column()
+            col_L.label(text="Hair Bangs :")
+            col_R = split.column()
+            col_R.prop(props, "bangs", text="")
+        box.separator()
             
 class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
     # EARS SETTINGS ____________________________________________________________________________________________
@@ -873,6 +932,9 @@ class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
         update=update_brows_shape_keys)
 
     # HAIR SETTINGS ____________________________________________________________________________________________
+    open_hair_section: bpy.props.StringProperty(default="hair_base")
+    hair_image: bpy.props.StringProperty(name="Hair Image", default="hair_default")
+
     hair_base: bpy.props.EnumProperty(
         name="Base Hair",
         items=[
@@ -885,38 +947,21 @@ class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
         ],
         update=update_hair
     )
+
     bangs: bpy.props.EnumProperty(
         name="Bangs",
         items=[
             ("none", "None", ""),
             ("boolBangs1", "Shell", ""),
             ("boolBangs2", "Side", ""),
-            ("boolBangs3", "Straight", "")
+            ("boolBangs3", "Symmetrical Heart", ""),
+            ("boolBangs4", "Heart", "")
         ],
-        update=update_hair
-    )
-    hair_color: bpy.props.EnumProperty(
-        name="Hair Color",
-        items=[
-            ("black", "Black", ""),
-            ("blonde", "Blonde", ""),
-            ("brown", "Brown", ""),
-            ("red", "Red", ""),
-            ("gray", "Gray", ""),
-            ("white", "White", "")
-        ],
-        update=update_hair
-    )
-    hair_length: bpy.props.FloatProperty(
-        name="Hair Length", min=0.0, max=2.0, default=1.0,
-        update=update_hair
-    )
-    hair_thickness: bpy.props.FloatProperty(
-        name="Hair Thickness", min=0.0, max=1.0, default=0.5,
         update=update_hair
     )
 
-classes = [BUSTE_PT_CustomizerPanel, BUSTE_CustomizerProperties, BUSTE_OT_SetEarSection, BUSTE_OT_SetEyeSection, BUSTE_OT_SetBrowSection]
+
+classes = [BUSTE_PT_CustomizerPanel, BUSTE_CustomizerProperties, BUSTE_OT_SetEarSection, BUSTE_OT_SetEyeSection, BUSTE_OT_SetBrowSection, BUSTE_OT_SetHairSection]
 
 def register():
     for cls in classes:
@@ -956,7 +1001,13 @@ def register():
         "brows_size": "brows_size.png",
         "brows_thickness": "brows_thickness.png",
         "brows_tilt": "brows_tilt.png",
-        "brows_type": "brows_type.png",}
+        "brows_type": "brows_type.png",
+        
+        "hair_default": "hair_default.png",
+        "hair_base": "hair_base.png",
+        "hair_bangs": "hair_bangs.png",
+        "hair_strands": "hair_strands.png",
+        "hair_back": "hair_back.png"}
 
     # Charger les images dynamiquement
     icon_ids = {}
@@ -994,6 +1045,13 @@ def register():
     bpy.types.Scene.brows_preview_icon_9 = bpy.props.IntProperty(default=icon_ids["brows_thickness"])
     bpy.types.Scene.brows_preview_icon_10 = bpy.props.IntProperty(default=icon_ids["brows_tilt"])
     bpy.types.Scene.brows_preview_icon_10 = bpy.props.IntProperty(default=icon_ids["brows_type"])
+    
+    # Hair ID
+    bpy.types.Scene.hair_preview_icon_1 = bpy.props.IntProperty(default=icon_ids["hair_default"])
+    bpy.types.Scene.hair_preview_icon_2 = bpy.props.IntProperty(default=icon_ids["hair_base"])
+    bpy.types.Scene.hair_preview_icon_3 = bpy.props.IntProperty(default=icon_ids["hair_bangs"])
+    bpy.types.Scene.hair_preview_icon_4 = bpy.props.IntProperty(default=icon_ids["hair_strands"])
+    bpy.types.Scene.hair_preview_icon_5 = bpy.props.IntProperty(default=icon_ids["hair_back"])
 
 def unregister():
     for cls in reversed(classes):

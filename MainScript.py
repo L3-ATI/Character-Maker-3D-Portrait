@@ -157,10 +157,6 @@ def update_facial_shape_keys(self, context):
     head = bpy.data.objects.get("head")
     eyes = bpy.data.objects.get("eyes")
     
-    
-    print(head.data.shape_keys.key_blocks.keys())
-    print(eyes.data.shape_keys.key_blocks.keys())
-    
     # Sélectionner les sourcils actifs
     brows_objects = {
         "eyebrows1": bpy.data.objects.get("eyebrows1"),
@@ -178,22 +174,6 @@ def update_facial_shape_keys(self, context):
     }
     
     active_eyelashes = eyelashes_objects.get(self.eyelashes_type)
-        
-    if not head or not head.data.shape_keys:
-        print("L'objet 'head' n'a pas de shape keys !")
-        return
-
-    if not eyes or not eyes.data.shape_keys:
-        print("L'objet 'eyes' n'a pas de shape keys !")
-        return
-    
-    if not active_brows or not active_brows.data.shape_keys:
-        print("L'objet 'eyebrows' n'a pas de shape keys !")
-        return
-    
-    if not active_eyelashes or not active_eyelashes.data.shape_keys:
-        print("L'objet 'eyelashes' sélectionné n'a pas de shape keys !")
-        return
 
     # Shape keys associées
     shape_keys = {
@@ -221,8 +201,6 @@ def update_facial_shape_keys(self, context):
             active_brows.data.shape_keys.key_blocks[key].value = value
         if key in active_eyelashes.data.shape_keys.key_blocks:
             active_eyelashes.data.shape_keys.key_blocks[key].value = value
-
-    print(f"Shape keys mises à jour pour head, eyes et {self.brows_type}")
 
 
 def update_brows_shape_keys(self, context):
@@ -282,21 +260,21 @@ def update_brows(self, context):
     update_brows_shape_keys(self, context)
 
 def update_eyelashes(self, context):
-    """ Active les sourcils sélectionnés et applique les shape keys uniquement à ceux-ci """
+    """ Active les cils sélectionnés et applique les shape keys uniquement à ceux-ci """
     
-    # Définition des objets sourcils
+    # Définition des objets cils
     eyelashes_objects = {
         "eyelashes1": bpy.data.objects.get("eyelashes1"),
         "eyelashes2": bpy.data.objects.get("eyelashes2"),
         "eyelashes3": bpy.data.objects.get("eyelashes3"),
     }
 
-    # Désactiver tous les sourcils
+    # Désactiver tous les cils
     for eyelashes in eyelashes_objects.values():
         if eyelashes:
             eyelashes.hide_set(True)
 
-    # Activer uniquement les sourcils sélectionnés
+    # Activer uniquement les cils sélectionnés
     active_eyelashes = eyelashes_objects.get(self.eyelashes_type)
     if active_eyelashes:
         active_eyelashes.hide_set(False)
@@ -376,6 +354,7 @@ def update_hair(self, context):
         "boolBangs2": "boolBangs2",
         "boolBangs3": "boolBangs3",
         "boolBangs4": "boolBangs4",
+        "boolBangs5": "boolBangs5",
     }
 
     # Définition des offsets en fonction de la hairBase sélectionnée
@@ -955,7 +934,8 @@ class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
             ("boolBangs1", "Shell", ""),
             ("boolBangs2", "Side", ""),
             ("boolBangs3", "Symmetrical Heart", ""),
-            ("boolBangs4", "Heart", "")
+            ("boolBangs4", "Heart", ""),
+            ("boolBangs5", "Pointy", "")
         ],
         update=update_hair
     )

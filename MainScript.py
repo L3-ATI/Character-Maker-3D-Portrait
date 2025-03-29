@@ -348,13 +348,17 @@ def update_hair(self, context):
         "hb4": "hairBase4",
         "hb5": "hairBase5",
     }
-
     bangs_objects = {
         "boolBangs1": "boolBangs1",
         "boolBangs2": "boolBangs2",
         "boolBangs3": "boolBangs3",
         "boolBangs4": "boolBangs4",
         "boolBangs5": "boolBangs5",
+    }
+    strands_objects = {
+        "boolStrands1": "boolStrands1",
+        "boolStrands2": "boolStrands2",
+        "boolStrands3": "boolStrands3",
     }
 
     # Définition des offsets en fonction de la hairBase sélectionnée
@@ -368,43 +372,47 @@ def update_hair(self, context):
 
     selected_hair = hair_objects.get(self.hair_base, None)
     selected_bangs = bangs_objects.get(self.bangs, None)
+    selected_strands = strands_objects.get(self.strands, None)
     new_position = bangs_offsets.get(self.hair_base, (0.0, 0.0, 0.0))
 
-    # Désactiver toutes les hairBase avant d'activer la sélectionnée
+    # Désactiver toutes les hairBase
     for obj_name in hair_objects.values():
         obj = bpy.data.objects.get(obj_name)
         if obj:
-            obj.hide_set(True)  # Cache l'objet
-    
+            obj.hide_set(True)  
+
+    # Désactiver tous les strands
+    for obj_name in strands_objects.values():
+        obj = bpy.data.objects.get(obj_name)
+        if obj:
+            obj.hide_set(True)
+
     if self.hair_base == "bald":
-        print("Personnage chauve")
-        return  # Évite d'exécuter le reste du code
+        return  
 
     # Activer uniquement la hairBase sélectionnée
     if selected_hair:
         obj = bpy.data.objects.get(selected_hair)
         if obj:
-            obj.hide_set(False)  # Affiche l'objet
-            print(f"HairBase activée : {selected_hair}")
+            obj.hide_set(False)  
 
-            # Mise à jour du modificateur Boolean pour les bangs sélectionnés
-            bool_modifier = None
-            for mod in obj.modifiers:
-                if mod.type == 'BOOLEAN' and mod.name == "BooleanBangs":
-                    bool_modifier = mod
-                    break
-            
-            if bool_modifier:
-                bool_modifier.show_viewport = True
-                bool_modifier.object = bpy.data.objects.get(selected_bangs) if selected_bangs else None
-                print(f"Modificateur Boolean mis à jour avec {selected_bangs}.")
-    
+            # Mise à jour du modificateur Boolean pour les bangs
+            bool_modifier_bangs = next((mod for mod in obj.modifiers if mod.type == 'BOOLEAN' and mod.name == "BooleanBangs"), None)
+            if bool_modifier_bangs:
+                bool_modifier_bangs.show_viewport = True
+                bool_modifier_bangs.object = bpy.data.objects.get(selected_bangs) if selected_bangs else None
+
+            # Mise à jour du modificateur Boolean pour les strands
+            bool_modifier_strands = next((mod for mod in obj.modifiers if mod.type == 'BOOLEAN' and mod.name == "BooleanStrands"), None)
+            if bool_modifier_strands:
+                bool_modifier_strands.show_viewport = True
+                bool_modifier_strands.object = bpy.data.objects.get(selected_strands) if selected_strands else None
+
     # Appliquer la position absolue SEULEMENT au bangs sélectionné
     if selected_bangs:
         bangs_obj = bpy.data.objects.get(selected_bangs)
         if bangs_obj:
             bangs_obj.location = new_position  # Affectation directe en world space
-            print(f"Position absolue appliquée à {selected_bangs} : {new_position}")
 
 class BUSTE_OT_SetEarSection(bpy.types.Operator):
     bl_idname = "buste.set_ear_section"
@@ -773,6 +781,7 @@ class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
             row.template_icon(preview_collections["main"][props.hair_image].icon_id, scale=6.0)
         row = box.row()
         row.operator("buste.set_hair_section", text="Bangs").section = "bangs"
+        row.operator("buste.set_hair_section", text="Strands").section = "strands"
         box.separator()
         box.separator()
         if props.open_hair_section == "hair_base":
@@ -787,6 +796,12 @@ class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
             col_L.label(text="Hair Bangs :")
             col_R = split.column()
             col_R.prop(props, "bangs", text="")
+        elif props.open_hair_section == "strands":
+            split = box.split(factor=0.5)
+            col_L = split.column()
+            col_L.label(text="Hair Strands :")
+            col_R = split.column()
+            col_R.prop(props, "strands", text="")
         box.separator()
             
 class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
@@ -913,7 +928,6 @@ class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
     # HAIR SETTINGS ____________________________________________________________________________________________
     open_hair_section: bpy.props.StringProperty(default="hair_base")
     hair_image: bpy.props.StringProperty(name="Hair Image", default="hair_default")
-
     hair_base: bpy.props.EnumProperty(
         name="Base Hair",
         items=[
@@ -922,11 +936,8 @@ class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
             ("hb3", "Tressed", ""),
             ("hb4", "Arranged", ""),
             ("hb5", "Parted", ""),
-            ("bald", "Bald", "")
-        ],
-        update=update_hair
-    )
-
+            ("bald", "Bald", "")],
+        update=update_hair)
     bangs: bpy.props.EnumProperty(
         name="Bangs",
         items=[
@@ -935,11 +946,16 @@ class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
             ("boolBangs2", "Side", ""),
             ("boolBangs3", "Symmetrical Heart", ""),
             ("boolBangs4", "Heart", ""),
-            ("boolBangs5", "Pointy", "")
-        ],
-        update=update_hair
-    )
-
+            ("boolBangs5", "Pointy", "")],
+        update=update_hair)
+    strands: bpy.props.EnumProperty(
+        name="Strands",
+        items=[
+            ("none", "None", ""),
+            ("boolStrands1", "Long", ""),
+            ("boolStrands2", "Soft", ""),
+            ("boolStrands3", "Medusa", "")],
+        update=update_hair)
 
 classes = [BUSTE_PT_CustomizerPanel, BUSTE_CustomizerProperties, BUSTE_OT_SetEarSection, BUSTE_OT_SetEyeSection, BUSTE_OT_SetBrowSection, BUSTE_OT_SetHairSection]
 

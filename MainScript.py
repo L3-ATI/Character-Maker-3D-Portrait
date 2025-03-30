@@ -293,6 +293,10 @@ def update_pupils(self, context):
                     texture_node.image.reload()  # Rafraîchir l'affichage
 
 def update_hair(self, context):
+    hairstyle_objects = {
+        "hairstyle1": "hairstyle1",
+        "hairstyle2": "hairstyle2",
+        "hairstyle3": "hairstyle3",}
     hair_objects = {
         "hb1": "hairBase1",
         "hb2": "hairBase2",
@@ -320,63 +324,55 @@ def update_hair(self, context):
         "hb3": (0.0, -0.3, -0.25),
         "hb4": (0.0, -0.1, -0.3),
         "hb5": (0.0, -0.2, -0.3),}
-
+    selected_hairstyle = hairstyle_objects.get(self.hairstyle, None)
     selected_hair = hair_objects.get(self.hair_base, None)
     selected_bangs = bangs_objects.get(self.bangs, None)
     selected_strands = strands_objects.get(self.strands, None)
     selected_back = back_objects.get(self.back, None)
     new_position = bangs_offsets.get(self.hair_base, (0.0, 0.0, 0.0))
-
-    # Désactiver toutes les hairBase
+    # Désactiver toutes les coiffures, dabord les bases puis les hairstyles :
     for obj_name in hair_objects.values():
         obj = bpy.data.objects.get(obj_name)
         if obj:
             obj.hide_set(True)
-
-    # Désactiver tous les strands
-    for obj_name in strands_objects.values():
+    for obj_name in hairstyle_objects.values():
         obj = bpy.data.objects.get(obj_name)
         if obj:
             obj.hide_set(True)
-
-    # Désactiver tous les back
-    for obj_name in back_objects.values():
-        obj = bpy.data.objects.get(obj_name)
+    # Arrêt de la méthode si une hairstyle est choisie + activation hairstyle sélectionnée :
+    if selected_hairstyle and not self.show_detailed_hair:
+        obj = bpy.data.objects.get(selected_hairstyle)
         if obj:
-            obj.hide_set(True)
-
+            obj.hide_set(False)
+        return
+    # Arrêt de la méthode si le personnage est chauve :
     if self.hair_base == "bald":
-        return  
-
-    # Activer uniquement la hairBase sélectionnée
+        return
+    # Activation de la hairbase sélectionnée :
     if selected_hair:
         obj = bpy.data.objects.get(selected_hair)
         if obj:
-            obj.hide_set(False)  
-
-            # Mise à jour du modificateur Boolean pour les bangs
+            obj.hide_set(False)
+            # Application des bangs sélectionnées au Boolean correspondant :
             bool_modifier_bangs = next((mod for mod in obj.modifiers if mod.type == 'BOOLEAN' and mod.name == "BooleanBangs"), None)
             if bool_modifier_bangs:
                 bool_modifier_bangs.show_viewport = True
                 bool_modifier_bangs.object = bpy.data.objects.get(selected_bangs) if selected_bangs else None
-
-            # Mise à jour du modificateur Boolean pour les strands
+            # Application des strands sélectionnées au Boolean correspondant :
             bool_modifier_strands = next((mod for mod in obj.modifiers if mod.type == 'BOOLEAN' and mod.name == "BooleanStrands"), None)
             if bool_modifier_strands:
                 bool_modifier_strands.show_viewport = True
                 bool_modifier_strands.object = bpy.data.objects.get(selected_strands) if selected_strands else None
-
-            # Mise à jour du modificateur Boolean pour les back
+            # Application du back sélectionné au Boolean correspondant :
             bool_modifier_back = next((mod for mod in obj.modifiers if mod.type == 'BOOLEAN' and mod.name == "BooleanBack"), None)
             if bool_modifier_back:
                 bool_modifier_back.show_viewport = True
                 bool_modifier_back.object = bpy.data.objects.get(selected_back) if selected_back else None
-
-    # Appliquer la position absolue SEULEMENT au bangs sélectionné
+    # Application de l'offset pour les bangs en world space :
     if selected_bangs:
         bangs_obj = bpy.data.objects.get(selected_bangs)
         if bangs_obj:
-            bangs_obj.location = new_position  # Affectation directe en world space
+            bangs_obj.location = new_position
 
 class BUSTE_OT_SetEarSection(bpy.types.Operator):
     bl_idname = "buste.set_ear_section"
@@ -667,6 +663,7 @@ class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
         row.operator("buste.set_brow_section", text="Height").section = "brows_height"
         row.operator("buste.set_brow_section", text="Proximity").section = "brows_proximity"
         row.operator("buste.set_brow_section", text="Depth").section = "brows_depth"
+        box.separator()
         if props.open_brow_section == "brows_type":
             split = box.split(factor=0.5)
             col_L = split.column()
@@ -738,41 +735,55 @@ class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
         row.alignment = 'CENTER'
         row.label(text="——— Hair Settings ———")
         row = box.row()
-        row.operator("buste.set_hair_section", text="Base").section = "hair_base"
-        row = box.row()
-        box.separator()
-        if "main" in preview_collections and props.hair_image in preview_collections["main"]:
-            row.template_icon(preview_collections["main"][props.hair_image].icon_id, scale=6.0)
-        row = box.row()
-        row.operator("buste.set_hair_section", text="Bangs").section = "bangs"
-        row.operator("buste.set_hair_section", text="Strands").section = "strands"
-        row.operator("buste.set_hair_section", text="Back").section = "back"
-        box.separator()
-        box.separator()
-        if props.open_hair_section == "hair_base":
+        row.alignment = 'CENTER'
+        row.prop(props, "show_detailed_hair", text="Detailed Hair Options")
+        if props.show_detailed_hair:
+            row = box.row()
+            box.separator()
+            if "main" in preview_collections and props.hair_image in preview_collections["main"]:
+                row.template_icon(preview_collections["main"][props.hair_image].icon_id, scale=6.0)
+            row = box.row()
+            row.operator("buste.set_hair_section", text="Base").section = "hair_base"
+            row = box.row()
+            row.operator("buste.set_hair_section", text="Bangs").section = "bangs"
+            row.operator("buste.set_hair_section", text="Strands").section = "strands"
+            row.operator("buste.set_hair_section", text="Back").section = "back"
+            box.separator()
+            if props.open_hair_section == "hair_base":
+                split = box.split(factor=0.5)
+                col_L = split.column()
+                col_L.label(text="Hair Base :")
+                col_R = split.column()
+                col_R.prop(props, "hair_base", text="")
+            elif props.open_hair_section == "bangs":
+                split = box.split(factor=0.5)
+                col_L = split.column()
+                col_L.label(text="Hair Bangs :")
+                col_R = split.column()
+                col_R.prop(props, "bangs", text="")
+            elif props.open_hair_section == "strands":
+                split = box.split(factor=0.5)
+                col_L = split.column()
+                col_L.label(text="Hair Strands :")
+                col_R = split.column()
+                col_R.prop(props, "strands", text="")
+            elif props.open_hair_section == "back":
+                split = box.split(factor=0.5)
+                col_L = split.column()
+                col_L.label(text="Back Hair :")
+                col_R = split.column()
+                col_R.prop(props, "back", text="")
+        else:
+            row = box.row()
+            box.separator()
+            if "main" in preview_collections and props.hair_image in preview_collections["main"]:
+                row.template_icon(preview_collections["main"][props.hair_image].icon_id, scale=6.0)
+            box.separator()
             split = box.split(factor=0.5)
             col_L = split.column()
-            col_L.label(text="Hair Base :")
+            col_L.label(text="Hair Style :")
             col_R = split.column()
-            col_R.prop(props, "hair_base", text="")
-        elif props.open_hair_section == "bangs":
-            split = box.split(factor=0.5)
-            col_L = split.column()
-            col_L.label(text="Hair Bangs :")
-            col_R = split.column()
-            col_R.prop(props, "bangs", text="")
-        elif props.open_hair_section == "strands":
-            split = box.split(factor=0.5)
-            col_L = split.column()
-            col_L.label(text="Hair Strands :")
-            col_R = split.column()
-            col_R.prop(props, "strands", text="")
-        elif props.open_hair_section == "back":
-            split = box.split(factor=0.5)
-            col_L = split.column()
-            col_L.label(text="Back Hair :")
-            col_R = split.column()
-            col_R.prop(props, "back", text="")
+            col_R.prop(props, "hairstyle", text="")
         box.separator()
             
 class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
@@ -936,6 +947,18 @@ class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
             ("boolBack3", "Bun", ""),
             ("boolBack4", "Ponytail", "")],
         update=update_hair)
+    hairstyle: bpy.props.EnumProperty(
+        name="Hairstyle",
+        items=[
+            ("hairstyle1", "hairstyle 1", ""),
+            ("hairstyle2", "hairstyle 2", ""),
+            ("hairstyle3", "hairstyle 3", "")],
+        update=update_hair)
+    show_detailed_hair: bpy.props.BoolProperty(
+        name="Detailed Hair Options",
+        description="Toggle between detailed hair customization and preset selection",
+        default=True,
+    update=update_hair)
 
 classes = [BUSTE_PT_CustomizerPanel, BUSTE_CustomizerProperties, BUSTE_OT_SetEarSection, BUSTE_OT_SetEyeSection, BUSTE_OT_SetBrowSection, BUSTE_OT_SetHairSection]
 
@@ -960,7 +983,7 @@ def register():
         "eyes_corner_EXT": "eyes_corner_EXT.png",
         "eyes_corner_INT": "eyes_corner_INT.png",
         "eyes_default": "eyes_default.png",
-        "eyes_distance": "eyes_distance.png",  # Correction orthographe
+        "eyes_distance": "eyes_distance.png",
         "eyes_eyelashes": "eyes_eyelashes.png",
         "eyes_eyelid_B": "eyes_eyelid_B.png",
         "eyes_eyelid_T": "eyes_eyelid_T.png",
@@ -998,7 +1021,6 @@ def register():
     bpy.types.Scene.ear_preview_icon_4 = bpy.props.IntProperty(default=icon_ids["ear_lobe_R"])
     bpy.types.Scene.ear_preview_icon_5 = bpy.props.IntProperty(default=icon_ids["ear_helix_L"])
     bpy.types.Scene.ear_preview_icon_6 = bpy.props.IntProperty(default=icon_ids["ear_helix_R"])
-
     # Yeux ID
     bpy.types.Scene.eye_preview_icon_1 = bpy.props.IntProperty(default=icon_ids["eyes_default"])
     bpy.types.Scene.eye_preview_icon_2 = bpy.props.IntProperty(default=icon_ids["eyes_height"])
@@ -1008,7 +1030,6 @@ def register():
     bpy.types.Scene.eye_preview_icon_6 = bpy.props.IntProperty(default=icon_ids["eyes_eyelid_B"])
     bpy.types.Scene.eye_preview_icon_7 = bpy.props.IntProperty(default=icon_ids["eyes_pupil"])
     bpy.types.Scene.eye_preview_icon_8 = bpy.props.IntProperty(default=icon_ids["eyes_eyelashes"])
-
     # Sourcils ID
     bpy.types.Scene.brows_preview_icon_1 = bpy.props.IntProperty(default=icon_ids["brows_default"])
     bpy.types.Scene.brows_preview_icon_2 = bpy.props.IntProperty(default=icon_ids["brows_angle"])
@@ -1021,7 +1042,6 @@ def register():
     bpy.types.Scene.brows_preview_icon_9 = bpy.props.IntProperty(default=icon_ids["brows_thickness"])
     bpy.types.Scene.brows_preview_icon_10 = bpy.props.IntProperty(default=icon_ids["brows_tilt"])
     bpy.types.Scene.brows_preview_icon_10 = bpy.props.IntProperty(default=icon_ids["brows_type"])
-    
     # Hair ID
     bpy.types.Scene.hair_preview_icon_1 = bpy.props.IntProperty(default=icon_ids["hair_default"])
     bpy.types.Scene.hair_preview_icon_2 = bpy.props.IntProperty(default=icon_ids["hair_base"])

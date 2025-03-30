@@ -151,9 +151,6 @@ def update_ears(self, context):
             helix_obj_R.rotation_euler = (helix_rotation_offset[0], -helix_rotation_offset[1], -helix_rotation_offset[2])  # Inversion en X et Z
 
 def update_facial_shape_keys(self, context):
-    
-    
-    """ Met à jour les shape keys du visage et des yeux en même temps. """
     head = bpy.data.objects.get("head")
     eyes = bpy.data.objects.get("eyes")
     
@@ -202,14 +199,9 @@ def update_facial_shape_keys(self, context):
         if key in active_eyelashes.data.shape_keys.key_blocks:
             active_eyelashes.data.shape_keys.key_blocks[key].value = value
 
-
 def update_brows_shape_keys(self, context):
-    """ Applique les shape keys uniquement sur les sourcils actifs """
-    
     active_brows = bpy.data.objects.get(self.brows_type)
-
     if not active_brows or not active_brows.data.shape_keys:
-        print(f"L'objet '{self.brows_type}' n'a pas de shape keys !")
         return
 
     shape_keys = {
@@ -226,8 +218,7 @@ def update_brows_shape_keys(self, context):
         "brows_tilt": self.brows_tilt,
         
         "brows_arch": self.brows_arch,
-        "brows_frown": self.brows_frown
-    }
+        "brows_frown": self.brows_frown}
 
     for key, value in shape_keys.items():
         if key in active_brows.data.shape_keys.key_blocks:
@@ -236,14 +227,10 @@ def update_brows_shape_keys(self, context):
             print(f"Shape Key '{key}' non trouvée sur '{self.brows_type}'.")
             
 def update_brows(self, context):
-    """ Active les sourcils sélectionnés et applique les shape keys uniquement à ceux-ci """
-    
-    # Définition des objets sourcils
     brows_objects = {
         "eyebrows1": bpy.data.objects.get("eyebrows1"),
         "eyebrows2": bpy.data.objects.get("eyebrows2"),
-        "eyebrows3": bpy.data.objects.get("eyebrows3"),
-    }
+        "eyebrows3": bpy.data.objects.get("eyebrows3"),}
 
     # Désactiver tous les sourcils
     for brows in brows_objects.values():
@@ -254,20 +241,15 @@ def update_brows(self, context):
     active_brows = brows_objects.get(self.brows_type)
     if active_brows:
         active_brows.hide_set(False)
-        print(f"Sourcils activés : {self.brows_type}")
 
     # Mettre à jour les shape keys des sourcils actifs
     update_brows_shape_keys(self, context)
 
 def update_eyelashes(self, context):
-    """ Active les cils sélectionnés et applique les shape keys uniquement à ceux-ci """
-    
-    # Définition des objets cils
     eyelashes_objects = {
         "eyelashes1": bpy.data.objects.get("eyelashes1"),
         "eyelashes2": bpy.data.objects.get("eyelashes2"),
-        "eyelashes3": bpy.data.objects.get("eyelashes3"),
-    }
+        "eyelashes3": bpy.data.objects.get("eyelashes3"),}
 
     # Désactiver tous les cils
     for eyelashes in eyelashes_objects.values():
@@ -278,41 +260,19 @@ def update_eyelashes(self, context):
     active_eyelashes = eyelashes_objects.get(self.eyelashes_type)
     if active_eyelashes:
         active_eyelashes.hide_set(False)
-        print(f"Cils activés : {self.eyelashes_type}")
     
     # Mettre à jour les shape keys des cils actifs
     update_facial_shape_keys(self, context)
 
 def update_pupils(self, context):
-    print(f"update_pupils() appelé avec {self.pupils_textures}")
-    """ Change la texture appliquée aux pupilles sans modifier leur géométrie """
-    
-    # Liste des textures attendues
-    expected_textures = ["pupilsText1.png", "pupilsText2.png", "pupilsText3.png"]
-
-    # Vérifier si toutes les textures sont chargées dans Blender
-    missing_textures = [tex for tex in expected_textures if tex not in bpy.data.images]
-
-    if missing_textures:
-        print(f"⚠ Attention : Les textures suivantes ne sont pas chargées dans Blender : {missing_textures}")
-    else:
-        print("✅ Toutes les textures de pupilles sont bien chargées.")
-
-    
-    # Liste des textures disponibles
     pupils_textures = {
         "pupil1": bpy.data.images.get("pupilsText1.png"),
         "pupil2": bpy.data.images.get("pupilsText2.png"),
-        "pupil3": bpy.data.images.get("pupilsText3.png"),
-    }
+        "pupil3": bpy.data.images.get("pupilsText3.png"),}
 
-    # Vérifier si la texture sélectionnée existe
     selected_texture = pupils_textures.get(self.pupils_textures)
-
     if not selected_texture:
-        print(f"Erreur : la texture {self.pupils_textures} n'existe pas dans bpy.data.images")
         return  # Empêche l'application d'une texture inexistante
-
 
     if selected_texture:
         # Appliquer la texture aux deux pupilles
@@ -332,57 +292,55 @@ def update_pupils(self, context):
                     texture_node.image = selected_texture
                     texture_node.image.reload()  # Rafraîchir l'affichage
 
-                else:
-                    print(f"Attention : Aucun nœud Image Texture trouvé dans {pupil_name}")
-
-
-        print(f"Pupilles activées : {self.pupils_textures}")
-
 def update_hair(self, context):
-    """ Active la hairBase sélectionnée, met à jour le modificateur Boolean des bangs et applique un offset aux bangs """
-
     hair_objects = {
         "hb1": "hairBase1",
         "hb2": "hairBase2",
         "hb3": "hairBase3",
         "hb4": "hairBase4",
-        "hb5": "hairBase5",
-    }
+        "hb5": "hairBase5",}
     bangs_objects = {
         "boolBangs1": "boolBangs1",
         "boolBangs2": "boolBangs2",
         "boolBangs3": "boolBangs3",
         "boolBangs4": "boolBangs4",
-        "boolBangs5": "boolBangs5",
-    }
+        "boolBangs5": "boolBangs5",}
     strands_objects = {
         "boolStrands1": "boolStrands1",
         "boolStrands2": "boolStrands2",
-        "boolStrands3": "boolStrands3",
-    }
-
-    # Définition des offsets en fonction de la hairBase sélectionnée
+        "boolStrands3": "boolStrands3",}
+    back_objects = {
+        "boolBack1": "boolBack1",
+        "boolBack2": "boolBack2",
+        "boolBack3": "boolBack3",
+        "boolBack4": "boolBack4"}
     bangs_offsets = {
         "hb1": (0.0, 0.0, 0.0),
         "hb2": (0.0, -0.1, -0.2),
         "hb3": (0.0, -0.3, -0.25),
         "hb4": (0.0, -0.1, -0.3),
-        "hb5": (0.0, -0.2, -0.3),
-    }
+        "hb5": (0.0, -0.2, -0.3),}
 
     selected_hair = hair_objects.get(self.hair_base, None)
     selected_bangs = bangs_objects.get(self.bangs, None)
     selected_strands = strands_objects.get(self.strands, None)
+    selected_back = back_objects.get(self.back, None)
     new_position = bangs_offsets.get(self.hair_base, (0.0, 0.0, 0.0))
 
     # Désactiver toutes les hairBase
     for obj_name in hair_objects.values():
         obj = bpy.data.objects.get(obj_name)
         if obj:
-            obj.hide_set(True)  
+            obj.hide_set(True)
 
     # Désactiver tous les strands
     for obj_name in strands_objects.values():
+        obj = bpy.data.objects.get(obj_name)
+        if obj:
+            obj.hide_set(True)
+
+    # Désactiver tous les back
+    for obj_name in back_objects.values():
         obj = bpy.data.objects.get(obj_name)
         if obj:
             obj.hide_set(True)
@@ -407,6 +365,12 @@ def update_hair(self, context):
             if bool_modifier_strands:
                 bool_modifier_strands.show_viewport = True
                 bool_modifier_strands.object = bpy.data.objects.get(selected_strands) if selected_strands else None
+
+            # Mise à jour du modificateur Boolean pour les back
+            bool_modifier_back = next((mod for mod in obj.modifiers if mod.type == 'BOOLEAN' and mod.name == "BooleanBack"), None)
+            if bool_modifier_back:
+                bool_modifier_back.show_viewport = True
+                bool_modifier_back.object = bpy.data.objects.get(selected_back) if selected_back else None
 
     # Appliquer la position absolue SEULEMENT au bangs sélectionné
     if selected_bangs:
@@ -782,6 +746,7 @@ class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
         row = box.row()
         row.operator("buste.set_hair_section", text="Bangs").section = "bangs"
         row.operator("buste.set_hair_section", text="Strands").section = "strands"
+        row.operator("buste.set_hair_section", text="Back").section = "back"
         box.separator()
         box.separator()
         if props.open_hair_section == "hair_base":
@@ -802,6 +767,12 @@ class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
             col_L.label(text="Hair Strands :")
             col_R = split.column()
             col_R.prop(props, "strands", text="")
+        elif props.open_hair_section == "back":
+            split = box.split(factor=0.5)
+            col_L = split.column()
+            col_L.label(text="Back Hair :")
+            col_R = split.column()
+            col_R.prop(props, "back", text="")
         box.separator()
             
 class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
@@ -955,6 +926,15 @@ class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
             ("boolStrands1", "Long", ""),
             ("boolStrands2", "Soft", ""),
             ("boolStrands3", "Medusa", "")],
+        update=update_hair)
+    back: bpy.props.EnumProperty(
+        name="Back",
+        items=[
+            ("none", "None", ""),
+            ("boolBack1", "Long", ""),
+            ("boolBack2", "Medium", ""),
+            ("boolBack3", "Bun", ""),
+            ("boolBack4", "Ponytail", "")],
         update=update_hair)
 
 classes = [BUSTE_PT_CustomizerPanel, BUSTE_CustomizerProperties, BUSTE_OT_SetEarSection, BUSTE_OT_SetEyeSection, BUSTE_OT_SetBrowSection, BUSTE_OT_SetHairSection]

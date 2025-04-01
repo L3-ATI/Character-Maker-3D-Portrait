@@ -969,9 +969,9 @@ def register():
     bpy.types.Scene.buste_customizer = bpy.props.PointerProperty(type=BUSTE_CustomizerProperties)
 
     # Dossier sur PC ATI :
-    #ICON_DIR = r"D:\Git Repositories\Character-Maker-3D-Portrait\Icons"
+    ICON_DIR = r"D:\Git Repositories\Character-Maker-3D-Portrait\Icons"
     # Dossier sur PC perso :
-    ICON_DIR = r"D:\Documents\2024-2025\Python\S2\Character-Maker-3D-Portrait\Icons"
+    #ICON_DIR = r"D:\Documents\2024-2025\Python\S2\Character-Maker-3D-Portrait\Icons"
     
     # Dictionnaire des images à charger
     icon_files = {

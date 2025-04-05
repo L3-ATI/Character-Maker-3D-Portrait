@@ -5,6 +5,54 @@ import os
 # Dictionnaire pour stocker les previews d'images (icones) :
 preview_collections = {}
 
+def load_scene():
+    
+    # Dossier sur PC ATI :
+    #filepath = r"D:\Git Repositories\Character-Maker-3D-Portrait\mainScene.blend"
+    # Dossier sur PC perso :
+    #filepath = r"D:\Documents\2024-2025\Python\S2\Character-Maker-3D-Portrait\mainScene.blend"
+    # Dossier avec Add-on :
+    filepath = os.path.join(os.path.dirname(__file__), "mainScene.blend")
+    
+    if not os.path.exists(filepath):
+        print(f"Erreur : fichier introuvable à {filepath}")
+        return
+
+    # Nom de la collection dans le .blend
+    collection_name = "Char Maker — Assets"
+
+    # Chemin d'accès interne
+    directory = filepath + "\\Collection\\"
+    filename = collection_name
+
+    # Append de la collection
+    bpy.ops.wm.append(
+        filepath=os.path.join(directory, filename),
+        directory=directory,
+        filename=filename)
+
+    # Une fois la collection importée :
+    imported_collection = bpy.data.collections.get(collection_name)
+    if not imported_collection:
+        print(f"Erreur : la collection '{collection_name}' n'a pas été trouvée.")
+        return
+
+    # Liste des objets à garder visibles
+    objects_to_keep_visible = {"head", "chest", "eyes", "hairBase1", "eyelashes1", "eyebrows1", "pupil_L", "pupil_R", "mainLight", "rimLight1", "rimLight2", "spotLight"}
+
+    # Rendre invisibles tous les objets sauf ceux de la liste
+    for obj in imported_collection.all_objects:
+        if obj.name not in objects_to_keep_visible:
+            obj.hide_set(True)                 # Dans la vue 3D
+        else:
+            obj.hide_set(False)
+
+# Méthode appelée quand le booléen change :
+def on_charge_scene_update(self, context):
+    if self.charge_scene:
+        # Lancer le chargement différé (timer pour éviter les conflits Blender)
+        bpy.app.timers.register(lambda: load_scene(), first_interval=0.001)
+
 def load_image(image_name, image_path):
     """Charge une image personnalisée et la stocke dans la collection de previews"""
     if not os.path.exists(image_path):
@@ -492,335 +540,360 @@ class BUSTE_OT_PlayAnimation(bpy.types.Operator):
     def execute(self, context):
         bpy.ops.screen.animation_play()
         return {'FINISHED'}
-
+    
 class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
     bl_label = "Character Maker 3D Portrait"
     bl_idname = "BUSTE_PT_CustomizerPanel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = "Character Maker"
-    
+        
     def draw(self, context):
         layout = self.layout
         props = context.scene.buste_customizer
         
-        # ANIMATION SETTING ____________________________________________________________________________________________
-        box = layout.box()
-        box.separator()
-        row = box.row()
-        row.alignment = 'CENTER'
-        row.label(text="——— Eyes Animation ———")
-        box.separator()
-        
-        box.operator("buste.play_animation")
-        box.separator()
-        
-        layout.separator()
-        layout.separator()
+        # Afficher le bouton de chargement de scene :
+        if not props.charge_scene:
+            box = layout.box()
+            box.separator()
+            row = box.row()
+            row.alignment = 'CENTER'
+            row.label(text="——— Setup ———")
+            box.separator()
+            row = box.row()
+            row.alignment = 'CENTER'
+            row.prop(props, "charge_scene", text=" Load Scene")
+            box.separator()
+            layout.separator()
+            layout.separator()
 
-        # EARS SETTINGS ____________________________________________________________________________________________
-        box = layout.box()
-        box.separator()
-        row = box.row()
-        row.alignment = 'CENTER'
-        row.label(text="——— Ears Settings ———")
-        box.separator()
+        # Afficher l'interface principale :
+        if props.charge_scene:
+            layout.separator()
+            layout.separator()
         
-        row = box.row()
-        row.operator("buste.set_ear_section", text="Type").section = "ear_type"
-        row = box.row()
-        box.separator()
-        if "main" in preview_collections and props.ear_image in preview_collections["main"]:
-            row.template_icon(preview_collections["main"][props.ear_image].icon_id, scale=6.0)
-        box.separator()
-        split = box.split(factor=0.5)
-        col_L = split.column()
-        col_R = split.column()
-        col_L.operator("buste.set_ear_section", text="Right Helix").section = "helix_R"
-        col_R.operator("buste.set_ear_section", text="Left Helix").section = "helix_L"
-        split = box.split(factor=0.5)
-        col_L = split.column()
-        col_R = split.column()
-        col_L.operator("buste.set_ear_section", text="Right Lobe").section = "earrings_R"
-        col_R.operator("buste.set_ear_section", text="Left Lobe").section = "earrings_L"
-        box.separator()
-        if props.open_ear_section == "ear_type":
-            split = box.split(factor=0.5)
-            col_L = split.column()
-            col_L.label(text="Ears Type :")
-            col_R = split.column()
-            col_R.prop(props, "ear_type", text="")
-        elif props.open_ear_section == "earrings_L":
-            split = box.split(factor=0.5)
-            col_L = split.column()
-            col_L.label(text="Left Lobe Earrings :")
-            col_R = split.column()
-            col_R.prop(props, "earrings_L", text="")
-        elif props.open_ear_section == "earrings_R":
-            split = box.split(factor=0.5)
-            col_L = split.column()
-            col_L.label(text="Right Lobe Earrings :")
-            col_R = split.column()
-            col_R.prop(props, "earrings_R", text="")
-        elif props.open_ear_section == "helix_L":
-            split = box.split(factor=0.5)
-            col_L = split.column()
-            col_L.label(text="Left Helix Earrings :")
-            col_R = split.column()
-            col_R.prop(props, "helix_L", text="")
-        elif props.open_ear_section == "helix_R":
-            split = box.split(factor=0.5)
-            col_L = split.column()
-            col_L.label(text="Right Helix Earrings :")
-            col_R = split.column()
-            col_R.prop(props, "helix_R", text="")
-        box.separator()
-        
-        layout.separator()
-        layout.separator()
+            # ANIMATION SETTING ____________________________________________________________________________________________
+            box = layout.box()
+            box.separator()
+            row = box.row()
+            row.alignment = 'CENTER'
+            row.label(text="——— Eyes Animation ———")
+            box.separator()
+            
+            box.operator("buste.play_animation")
+            box.separator()
+            
+            layout.separator()
+            layout.separator()
 
-        # EYES SETTINGS ____________________________________________________________________________________________
-        box = layout.box()
-        box.separator()
-        row = box.row()
-        row.alignment = 'CENTER'
-        row.label(text="——— Eyes Settings ———")
-        box.separator()
-        
-        row = box.column()
-        row.operator("buste.set_eye_section", text="Eyelashes").section = "eyelashes_type"
-        row.operator("buste.set_eye_section", text="Pupils").section = "pupils_textures"
-        box.separator()
-        row = box.row()
-        if "main" in preview_collections and props.eye_image in preview_collections["main"]:
-            row.template_icon(preview_collections["main"][props.eye_image].icon_id, scale=6.0)
-        box.separator()
-        box.operator("buste.set_eye_section", text="Top Eyelid").section = "eyelid_T"
-        split = box.split(factor=0.5)
-        col_L = split.column()
-        col_R = split.column()
-        col_L.operator("buste.set_eye_section", text="Medial Canthus").section = "corner_INT"
-        col_R.operator("buste.set_eye_section", text="Lateral Canthus").section = "corner_EXT"
-        box.operator("buste.set_eye_section", text="Bottom Eyelid").section = "eyelid_B"
-        box.separator()
-        row = box.column()
-        row.operator("buste.set_eye_section", text="Eyes Height").section = "eyes_height"
-        row.operator("buste.set_eye_section", text="Eyes Distance").section = "eyes_distance"
-        box.separator()
-        if props.open_eye_section == "eyelashes_type":
+            # EARS SETTINGS ____________________________________________________________________________________________
+            box = layout.box()
+            box.separator()
+            row = box.row()
+            row.alignment = 'CENTER'
+            row.label(text="——— Ears Settings ———")
+            box.separator()
+            
+            row = box.row()
+            row.operator("buste.set_ear_section", text="Type").section = "ear_type"
+            row = box.row()
+            box.separator()
+            if "main" in preview_collections and props.ear_image in preview_collections["main"]:
+                row.template_icon(preview_collections["main"][props.ear_image].icon_id, scale=6.0)
+            box.separator()
             split = box.split(factor=0.5)
             col_L = split.column()
-            col_L.label(text="Eyelashes Type :")
             col_R = split.column()
-            col_R.prop(props, "eyelashes_type", text="")
-        elif props.open_eye_section == "pupils_textures":
+            col_L.operator("buste.set_ear_section", text="Right Helix").section = "helix_R"
+            col_R.operator("buste.set_ear_section", text="Left Helix").section = "helix_L"
             split = box.split(factor=0.5)
             col_L = split.column()
-            col_L.label(text="Pupils Shape :")
             col_R = split.column()
-            col_R.prop(props, "pupils_textures", text="")
-        elif props.open_eye_section == "corner_EXT":
-            split = box.split(factor=0.5)
-            col_L = split.column()
-            col_L.label(text="Lateral Canthus :")
-            col_R = split.column()
-            col_R.prop(props, "corner_EXT", text="")
-        elif props.open_eye_section == "corner_INT":
-            split = box.split(factor=0.5)
-            col_L = split.column()
-            col_L.label(text="Medial Canthus :")
-            col_R = split.column()
-            col_R.prop(props, "corner_INT", text="")
-        elif props.open_eye_section == "eyelid_T":
-            split = box.split(factor=0.5)
-            col_L = split.column()
-            col_L.label(text="Top Eyelid :")
-            col_R = split.column()
-            col_R.prop(props, "eyelid_T_height", text="Height")
-            col_R.prop(props, "eyelid_T_angle", text="Angle")
-        elif props.open_eye_section == "eyelid_B":
-            split = box.split(factor=0.5)
-            col_L = split.column()
-            col_L.label(text="Bottom Eyelid :")
-            col_R = split.column()
-            col_R.prop(props, "eyelid_B_height", text="Height")
-            col_R.prop(props, "eyelid_B_angle", text="Angle")
-        elif props.open_eye_section == "eyes_height":
-            split = box.split(factor=0.5)
-            col_L = split.column()
-            col_L.label(text="Eyes height :")
-            col_R = split.column()
-            col_R.prop(props, "eyes_height", text="")
-        elif props.open_eye_section == "eyes_distance":
-            split = box.split(factor=0.5)
-            col_L = split.column()
-            col_L.label(text="Eyes Distance :")
-            col_R = split.column()
-            col_R.prop(props, "eyes_distance", text="")
-        box.separator()
-        
-        layout.separator()
-        layout.separator()
-        
-        # BROWS SETTINGS ____________________________________________________________________________________________
-        box = layout.box()
-        box.separator()
-        row = box.row()
-        row.alignment = 'CENTER'
-        row.label(text="——— Brows Settings ———")
-        box.separator()
-        
-        row = box.column()
-        row.operator("buste.set_brow_section", text="Type").section = "brows_type"
-        row.operator("buste.set_brow_section", text="Thickness").section = "brows_thickness"
-        row = box.row()
-        row.operator("buste.set_brow_section", text="Size").section = "brows_size"
-        row.operator("buste.set_brow_section", text="Angle").section = "brows_angle"
-        row = box.row()
-        if "main" in preview_collections and props.brow_image in preview_collections["main"]:
-            row.template_icon(preview_collections["main"][props.brow_image].icon_id, scale=6.0)
-        row = box.row()
-        row.operator("buste.set_brow_section", text="Frown").section = "brows_frown"
-        row.operator("buste.set_brow_section", text="Arch").section = "brows_arch"
-        row.operator("buste.set_brow_section", text="Tilt").section = "brows_tilt"
-        row = box.column()
-        row.operator("buste.set_brow_section", text="Height").section = "brows_height"
-        row.operator("buste.set_brow_section", text="Proximity").section = "brows_proximity"
-        row.operator("buste.set_brow_section", text="Depth").section = "brows_depth"
-        box.separator()
-        if props.open_brow_section == "brows_type":
-            split = box.split(factor=0.5)
-            col_L = split.column()
-            col_L.label(text="Eyebrows Type :")
-            col_R = split.column()
-            col_R.prop(props, "brows_type", text="")
-        elif props.open_brow_section == "brows_thickness":
-            split = box.split(factor=0.5)
-            col_L = split.column()
-            col_L.label(text="Eyebrows Thickness :")
-            col_R = split.column()
-            col_R.prop(props, "brows_thickness", text="")
-        elif props.open_brow_section == "brows_size":
-            split = box.split(factor=0.5)
-            col_L = split.column()
-            col_L.label(text="Eyebrows Size :")
-            col_R = split.column()
-            col_R.prop(props, "brows_size", text="")
-        elif props.open_brow_section == "brows_angle":
-            split = box.split(factor=0.5)
-            col_L = split.column()
-            col_L.label(text="Eyebrows Angle :")
-            col_R = split.column()
-            col_R.prop(props, "brows_angle", text="")
-        elif props.open_brow_section == "brows_frown":
-            split = box.split(factor=0.5)
-            col_L = split.column()
-            col_L.label(text="Eyebrows Frown :")
-            col_R = split.column()
-            col_R.prop(props, "brows_frown", text="")
-        elif props.open_brow_section == "brows_arch":
-            split = box.split(factor=0.5)
-            col_L = split.column()
-            col_L.label(text="Eyebrows Arch :")
-            col_R = split.column()
-            col_R.prop(props, "brows_arch", text="")
-        elif props.open_brow_section == "brows_tilt":
-            split = box.split(factor=0.5)
-            col_L = split.column()
-            col_L.label(text="Eyebrows Tilt :")
-            col_R = split.column()
-            col_R.prop(props, "brows_tilt", text="")
-        elif props.open_brow_section == "brows_height":
-            split = box.split(factor=0.5)
-            col_L = split.column()
-            col_L.label(text="Eyebrows Height :")
-            col_R = split.column()
-            col_R.prop(props, "brows_height", text="")
-        elif props.open_brow_section == "brows_proximity":
-            split = box.split(factor=0.5)
-            col_L = split.column()
-            col_L.label(text="Eyebrows Proximity :")
-            col_R = split.column()
-            col_R.prop(props, "brows_proximity", text="")
-        elif props.open_brow_section == "brows_depth":
-            split = box.split(factor=0.5)
-            col_L = split.column()
-            col_L.label(text="Eyebrows Depth :")
-            col_R = split.column()
-            col_R.prop(props, "brows_depth", text="")
-        box.separator()
-        
-        layout.separator()
-        layout.separator()
+            col_L.operator("buste.set_ear_section", text="Right Lobe").section = "earrings_R"
+            col_R.operator("buste.set_ear_section", text="Left Lobe").section = "earrings_L"
+            box.separator()
+            if props.open_ear_section == "ear_type":
+                split = box.split(factor=0.5)
+                col_L = split.column()
+                col_L.label(text="Ears Type :")
+                col_R = split.column()
+                col_R.prop(props, "ear_type", text="")
+            elif props.open_ear_section == "earrings_L":
+                split = box.split(factor=0.5)
+                col_L = split.column()
+                col_L.label(text="Left Lobe Earrings :")
+                col_R = split.column()
+                col_R.prop(props, "earrings_L", text="")
+            elif props.open_ear_section == "earrings_R":
+                split = box.split(factor=0.5)
+                col_L = split.column()
+                col_L.label(text="Right Lobe Earrings :")
+                col_R = split.column()
+                col_R.prop(props, "earrings_R", text="")
+            elif props.open_ear_section == "helix_L":
+                split = box.split(factor=0.5)
+                col_L = split.column()
+                col_L.label(text="Left Helix Earrings :")
+                col_R = split.column()
+                col_R.prop(props, "helix_L", text="")
+            elif props.open_ear_section == "helix_R":
+                split = box.split(factor=0.5)
+                col_L = split.column()
+                col_L.label(text="Right Helix Earrings :")
+                col_R = split.column()
+                col_R.prop(props, "helix_R", text="")
+            box.separator()
+            
+            layout.separator()
+            layout.separator()
 
-        # HAIR SETTINGS ____________________________________________________________________________________________
-        box = layout.box()
-        box.separator()
-        row = box.row()
-        row.alignment = 'CENTER'
-        row.label(text="——— Hair Settings ———")
-        box.separator()
-        
-        row = box.row()
-        row.alignment = 'CENTER'
-        row.prop(props, "show_detailed_hair", text="Hair Detailed Options")
-        if props.show_detailed_hair:
-            row = box.row()
+            # EYES SETTINGS ____________________________________________________________________________________________
+            box = layout.box()
             box.separator()
-            if "main" in preview_collections and props.hair_image in preview_collections["main"]:
-                row.template_icon(preview_collections["main"][props.hair_image].icon_id, scale=6.0)
             row = box.row()
-            row.operator("buste.set_hair_section", text="Base").section = "hair_base"
+            row.alignment = 'CENTER'
+            row.label(text="——— Eyes Settings ———")
+            box.separator()
+            
+            row = box.column()
+            row.operator("buste.set_eye_section", text="Eyelashes").section = "eyelashes_type"
+            row.operator("buste.set_eye_section", text="Pupils").section = "pupils_textures"
+            box.separator()
             row = box.row()
-            row.operator("buste.set_hair_section", text="Bangs").section = "bangs"
-            row.operator("buste.set_hair_section", text="Strands").section = "strands"
-            row.operator("buste.set_hair_section", text="Back").section = "back"
+            if "main" in preview_collections and props.eye_image in preview_collections["main"]:
+                row.template_icon(preview_collections["main"][props.eye_image].icon_id, scale=6.0)
             box.separator()
-            if props.open_hair_section == "hair_base":
-                split = box.split(factor=0.5)
-                col_L = split.column()
-                col_L.label(text="Hair Base :")
-                col_R = split.column()
-                col_R.prop(props, "hair_base", text="")
-            elif props.open_hair_section == "bangs":
-                split = box.split(factor=0.5)
-                col_L = split.column()
-                col_L.label(text="Hair Bangs :")
-                col_R = split.column()
-                col_R.prop(props, "bangs", text="")
-            elif props.open_hair_section == "strands":
-                split = box.split(factor=0.5)
-                col_L = split.column()
-                col_L.label(text="Hair Strands :")
-                col_R = split.column()
-                col_R.prop(props, "strands", text="")
-            elif props.open_hair_section == "back":
-                split = box.split(factor=0.5)
-                col_L = split.column()
-                col_L.label(text="Back Hair :")
-                col_R = split.column()
-                col_R.prop(props, "back", text="")
-        else:
-            row = box.row()
-            box.separator()
-            if "main" in preview_collections and "hair_all" in preview_collections["main"]:
-                row.template_icon(preview_collections["main"]["hair_all"].icon_id, scale=6.0)
-            box.separator()
+            box.operator("buste.set_eye_section", text="Top Eyelid").section = "eyelid_T"
             split = box.split(factor=0.5)
             col_L = split.column()
-            col_L.label(text="Hair Style :")
             col_R = split.column()
-            col_R.prop(props, "hairstyle", text="")
-        box.separator()
+            col_L.operator("buste.set_eye_section", text="Medial Canthus").section = "corner_INT"
+            col_R.operator("buste.set_eye_section", text="Lateral Canthus").section = "corner_EXT"
+            box.operator("buste.set_eye_section", text="Bottom Eyelid").section = "eyelid_B"
+            box.separator()
+            row = box.column()
+            row.operator("buste.set_eye_section", text="Eyes Height").section = "eyes_height"
+            row.operator("buste.set_eye_section", text="Eyes Distance").section = "eyes_distance"
+            box.separator()
+            if props.open_eye_section == "eyelashes_type":
+                split = box.split(factor=0.5)
+                col_L = split.column()
+                col_L.label(text="Eyelashes Type :")
+                col_R = split.column()
+                col_R.prop(props, "eyelashes_type", text="")
+            elif props.open_eye_section == "pupils_textures":
+                split = box.split(factor=0.5)
+                col_L = split.column()
+                col_L.label(text="Pupils Shape :")
+                col_R = split.column()
+                col_R.prop(props, "pupils_textures", text="")
+            elif props.open_eye_section == "corner_EXT":
+                split = box.split(factor=0.5)
+                col_L = split.column()
+                col_L.label(text="Lateral Canthus :")
+                col_R = split.column()
+                col_R.prop(props, "corner_EXT", text="")
+            elif props.open_eye_section == "corner_INT":
+                split = box.split(factor=0.5)
+                col_L = split.column()
+                col_L.label(text="Medial Canthus :")
+                col_R = split.column()
+                col_R.prop(props, "corner_INT", text="")
+            elif props.open_eye_section == "eyelid_T":
+                split = box.split(factor=0.5)
+                col_L = split.column()
+                col_L.label(text="Top Eyelid :")
+                col_R = split.column()
+                col_R.prop(props, "eyelid_T_height", text="Height")
+                col_R.prop(props, "eyelid_T_angle", text="Angle")
+            elif props.open_eye_section == "eyelid_B":
+                split = box.split(factor=0.5)
+                col_L = split.column()
+                col_L.label(text="Bottom Eyelid :")
+                col_R = split.column()
+                col_R.prop(props, "eyelid_B_height", text="Height")
+                col_R.prop(props, "eyelid_B_angle", text="Angle")
+            elif props.open_eye_section == "eyes_height":
+                split = box.split(factor=0.5)
+                col_L = split.column()
+                col_L.label(text="Eyes height :")
+                col_R = split.column()
+                col_R.prop(props, "eyes_height", text="")
+            elif props.open_eye_section == "eyes_distance":
+                split = box.split(factor=0.5)
+                col_L = split.column()
+                col_L.label(text="Eyes Distance :")
+                col_R = split.column()
+                col_R.prop(props, "eyes_distance", text="")
+            box.separator()
+            
+            layout.separator()
+            layout.separator()
+            
+            # BROWS SETTINGS ____________________________________________________________________________________________
+            box = layout.box()
+            box.separator()
+            row = box.row()
+            row.alignment = 'CENTER'
+            row.label(text="——— Brows Settings ———")
+            box.separator()
+            
+            row = box.column()
+            row.operator("buste.set_brow_section", text="Type").section = "brows_type"
+            row.operator("buste.set_brow_section", text="Thickness").section = "brows_thickness"
+            row = box.row()
+            row.operator("buste.set_brow_section", text="Size").section = "brows_size"
+            row.operator("buste.set_brow_section", text="Angle").section = "brows_angle"
+            row = box.row()
+            if "main" in preview_collections and props.brow_image in preview_collections["main"]:
+                row.template_icon(preview_collections["main"][props.brow_image].icon_id, scale=6.0)
+            row = box.row()
+            row.operator("buste.set_brow_section", text="Frown").section = "brows_frown"
+            row.operator("buste.set_brow_section", text="Arch").section = "brows_arch"
+            row.operator("buste.set_brow_section", text="Tilt").section = "brows_tilt"
+            row = box.column()
+            row.operator("buste.set_brow_section", text="Height").section = "brows_height"
+            row.operator("buste.set_brow_section", text="Proximity").section = "brows_proximity"
+            row.operator("buste.set_brow_section", text="Depth").section = "brows_depth"
+            box.separator()
+            if props.open_brow_section == "brows_type":
+                split = box.split(factor=0.5)
+                col_L = split.column()
+                col_L.label(text="Eyebrows Type :")
+                col_R = split.column()
+                col_R.prop(props, "brows_type", text="")
+            elif props.open_brow_section == "brows_thickness":
+                split = box.split(factor=0.5)
+                col_L = split.column()
+                col_L.label(text="Eyebrows Thickness :")
+                col_R = split.column()
+                col_R.prop(props, "brows_thickness", text="")
+            elif props.open_brow_section == "brows_size":
+                split = box.split(factor=0.5)
+                col_L = split.column()
+                col_L.label(text="Eyebrows Size :")
+                col_R = split.column()
+                col_R.prop(props, "brows_size", text="")
+            elif props.open_brow_section == "brows_angle":
+                split = box.split(factor=0.5)
+                col_L = split.column()
+                col_L.label(text="Eyebrows Angle :")
+                col_R = split.column()
+                col_R.prop(props, "brows_angle", text="")
+            elif props.open_brow_section == "brows_frown":
+                split = box.split(factor=0.5)
+                col_L = split.column()
+                col_L.label(text="Eyebrows Frown :")
+                col_R = split.column()
+                col_R.prop(props, "brows_frown", text="")
+            elif props.open_brow_section == "brows_arch":
+                split = box.split(factor=0.5)
+                col_L = split.column()
+                col_L.label(text="Eyebrows Arch :")
+                col_R = split.column()
+                col_R.prop(props, "brows_arch", text="")
+            elif props.open_brow_section == "brows_tilt":
+                split = box.split(factor=0.5)
+                col_L = split.column()
+                col_L.label(text="Eyebrows Tilt :")
+                col_R = split.column()
+                col_R.prop(props, "brows_tilt", text="")
+            elif props.open_brow_section == "brows_height":
+                split = box.split(factor=0.5)
+                col_L = split.column()
+                col_L.label(text="Eyebrows Height :")
+                col_R = split.column()
+                col_R.prop(props, "brows_height", text="")
+            elif props.open_brow_section == "brows_proximity":
+                split = box.split(factor=0.5)
+                col_L = split.column()
+                col_L.label(text="Eyebrows Proximity :")
+                col_R = split.column()
+                col_R.prop(props, "brows_proximity", text="")
+            elif props.open_brow_section == "brows_depth":
+                split = box.split(factor=0.5)
+                col_L = split.column()
+                col_L.label(text="Eyebrows Depth :")
+                col_R = split.column()
+                col_R.prop(props, "brows_depth", text="")
+            box.separator()
+            
+            layout.separator()
+            layout.separator()
+
+            # HAIR SETTINGS ____________________________________________________________________________________________
+            box = layout.box()
+            box.separator()
+            row = box.row()
+            row.alignment = 'CENTER'
+            row.label(text="——— Hair Settings ———")
+            box.separator()
+            
+            row = box.row()
+            row.alignment = 'CENTER'
+            row.prop(props, "show_detailed_hair", text="Hair Detailed Options")
+            if props.show_detailed_hair:
+                row = box.row()
+                box.separator()
+                if "main" in preview_collections and props.hair_image in preview_collections["main"]:
+                    row.template_icon(preview_collections["main"][props.hair_image].icon_id, scale=6.0)
+                row = box.row()
+                row.operator("buste.set_hair_section", text="Base").section = "hair_base"
+                row = box.row()
+                row.operator("buste.set_hair_section", text="Bangs").section = "bangs"
+                row.operator("buste.set_hair_section", text="Strands").section = "strands"
+                row.operator("buste.set_hair_section", text="Back").section = "back"
+                box.separator()
+                if props.open_hair_section == "hair_base":
+                    split = box.split(factor=0.5)
+                    col_L = split.column()
+                    col_L.label(text="Hair Base :")
+                    col_R = split.column()
+                    col_R.prop(props, "hair_base", text="")
+                elif props.open_hair_section == "bangs":
+                    split = box.split(factor=0.5)
+                    col_L = split.column()
+                    col_L.label(text="Hair Bangs :")
+                    col_R = split.column()
+                    col_R.prop(props, "bangs", text="")
+                elif props.open_hair_section == "strands":
+                    split = box.split(factor=0.5)
+                    col_L = split.column()
+                    col_L.label(text="Hair Strands :")
+                    col_R = split.column()
+                    col_R.prop(props, "strands", text="")
+                elif props.open_hair_section == "back":
+                    split = box.split(factor=0.5)
+                    col_L = split.column()
+                    col_L.label(text="Back Hair :")
+                    col_R = split.column()
+                    col_R.prop(props, "back", text="")
+            else:
+                row = box.row()
+                box.separator()
+                if "main" in preview_collections and "hair_all" in preview_collections["main"]:
+                    row.template_icon(preview_collections["main"]["hair_all"].icon_id, scale=6.0)
+                box.separator()
+                split = box.split(factor=0.5)
+                col_L = split.column()
+                col_L.label(text="Hair Style :")
+                col_R = split.column()
+                col_R.prop(props, "hairstyle", text="")
+            box.separator()
             
 class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
-
+    
+    # PARAMETRE DE CHARGEMENT SCENE ____________________________________________________________________________________________
+    charge_scene: bpy.props.BoolProperty(
+        name="Load Scene",
+        default=False,
+        update=on_charge_scene_update)
+    
     # ANIMATION SETTING ____________________________________________________________________________________________
     bpy.types.Scene.buste_play_animation = bpy.props.BoolProperty(
         name="Animation Activation",
         description="Play or stop animation",
         update=lambda self, context: toggle_animation(self, context))
-
     
     # EARS SETTINGS ____________________________________________________________________________________________
     open_ear_section: bpy.props.StringProperty(default="ear_type")
@@ -1002,7 +1075,6 @@ def load_icons():
     #ICON_DIR = r"D:\Git Repositories\Character-Maker-3D-Portrait\Icons"
     # Dossier sur PC perso :
     #ICON_DIR = r"D:\Documents\2024-2025\Python\S2\Character-Maker-3D-Portrait\Icons"
-    
     # Dossier avec Add-on :
     ICON_DIR = os.path.join(os.path.dirname(__file__), "icons")
     
@@ -1085,15 +1157,6 @@ def load_icons():
     bpy.types.Scene.hair_preview_icon_4 = bpy.props.IntProperty(default=icon_ids["hair_bangs"])
     bpy.types.Scene.hair_preview_icon_5 = bpy.props.IntProperty(default=icon_ids["hair_strands"])
     bpy.types.Scene.hair_preview_icon_6 = bpy.props.IntProperty(default=icon_ids["hair_back"])
-
-# Charger la scène au démarrage via un timer
-def load_scene():
-    filepath = os.path.join(os.path.dirname(__file__), "mainScene.blend")
-    bpy.ops.wm.open_mainfile(filepath=filepath)
-
-def load_scene_delayed():
-    """Utiliser un timer pour charger la scène après l'initialisation de Blender"""
-    bpy.app.timers.register(lambda: load_scene(), first_interval=1)
     
 classes = [BUSTE_PT_CustomizerPanel, BUSTE_CustomizerProperties, BUSTE_OT_SetEarSection, BUSTE_OT_SetEyeSection, BUSTE_OT_SetBrowSection, BUSTE_OT_SetHairSection, BUSTE_OT_PlayAnimation]
 
@@ -1106,9 +1169,6 @@ def register():
     # Charger les icones :
     load_icons()
 
-    # Charger la scène après un délai :
-    load_scene_delayed()
-
 def unregister():
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
@@ -1116,6 +1176,8 @@ def unregister():
     # Nettoyage des previews :
     for pcoll in preview_collections.values():
         bpy.utils.previews.remove(pcoll)
+    
+    del bpy.types.Scene.buste_customizer
 
 if __name__ == "__main__":
     register()

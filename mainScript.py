@@ -2,85 +2,143 @@ import bpy
 import bpy.utils.previews
 import os
 
-# Dictionnaire pour stocker les previews d'images (icones) :
+
+
+# ————————————————————————————————————————————————
+# PRÉPARATION DES OUTILS
+# ————————————————————————————————————————————————
+
+# Dictionnaire servant à stocker les previews (icônes) :
 preview_collections = {}
 
+
+
+# ————————————————————————————————————————————————
+# FONCTION DE CHARGEMENT DE SCÈNE
+# ————————————————————————————————————————————————
+
 def load_scene():
+    """
+    Fonction qui permet d'importer une collection spécifique depuis un fichier .blend.
+    Elle ne remplace pas la scène actuelle, elle en importe une partie (la collection d'assets).
+    Elle est pensée pour fonctionner en tant qu'étape de set-up d’un Character Maker.
+    """
+
+    # Détection automatique du chemin vers la scène basé sur la position du script :
+    filepath = os.path.join(os.path.dirname(__file__), "mainScene.blend")  # __file__ = emplacement du script Python
     
-    # Dossier sur PC ATI :
-    #filepath = r"D:\Git Repositories\Character-Maker-3D-Portrait\mainScene.blend"
-    # Dossier sur PC perso :
-    #filepath = r"D:\Documents\2024-2025\Python\S2\Character-Maker-3D-Portrait\mainScene.blend"
-    # Dossier avec Add-on :
-    filepath = os.path.join(os.path.dirname(__file__), "mainScene.blend")
-    
+    # Vérification de l'existance de la scène avant import :
     if not os.path.exists(filepath):
         print(f"Erreur : fichier introuvable à {filepath}")
         return
 
-    # Nom de la collection dans le .blend
+    # Nom de la collection à importer depuis la scène .blend :
     collection_name = "Char Maker — Assets"
 
-    # Chemin d'accès interne
+    # Construction du chemin interne pour aller chercher la collection :
     directory = filepath + "\\Collection\\"
     filename = collection_name
 
-    # Append de la collection
+    # Import (append) de la collection dans la scène actuelle :
     bpy.ops.wm.append(
         filepath=os.path.join(directory, filename),
         directory=directory,
         filename=filename)
 
-    # Une fois la collection importée :
+    # Récupération de la collection importée :
     imported_collection = bpy.data.collections.get(collection_name)
     if not imported_collection:
         print(f"Erreur : la collection '{collection_name}' n'a pas été trouvée.")
         return
 
-    # Liste des objets à garder visibles
-    objects_to_keep_visible = {"head", "chest", "eyes", "hairBase1", "eyelashes1", "eyebrows1", "pupil_L", "pupil_R", "mainLight", "rimLight1", "rimLight2", "spotLight"}
+    # Liste des objets qui doivent rester visibles après l’import :
+    objects_to_keep_visible = {
+        "head", "chest", "eyes", "hairBase1", "eyelashes1", "eyebrows1",
+        "pupil_L", "pupil_R", "mainLight", "rimLight1", "rimLight2", "spotLight"}
 
-    # Rendre invisibles tous les objets sauf ceux de la liste
+    # Parcours de tous les objets de la collection importée pour en cacher la majorité :
     for obj in imported_collection.all_objects:
         if obj.name not in objects_to_keep_visible:
-            obj.hide_set(True)                 # Dans la vue 3D
+            obj.hide_set(True)
         else:
             obj.hide_set(False)
 
-# Méthode appelée quand le booléen change :
+
+
+# ————————————————————————————————————————————————
+# GESTION DU BOOLEAN POUR CHARGER LA SCÈNE
+# ————————————————————————————————————————————————
+
 def on_charge_scene_update(self, context):
+    """
+    Fonction appelée automatiquement quand l'utilisateur coche la case Setup de l’UI.
+    Cela permet de lancer la fonction load_scene sans bloquer l’interface Blender.
+    """
+    
     if self.charge_scene:
-        # Lancer le chargement différé (timer pour éviter les conflits Blender)
+        # Lancement différé via le timer de Blender pour éviter les erreurs de contexte :
         bpy.app.timers.register(lambda: load_scene(), first_interval=0.001)
 
+
+
+# ————————————————————————————————————————————————
+# FONCTION DE CHARGEMENT D’IMAGE POUR ICÔNES
+# ————————————————————————————————————————————————
+
 def load_image(image_name, image_path):
-    """Charge une image personnalisée et la stocke dans la collection de previews"""
+    """
+    Charge une image (icône personnalisée) dans la collection de previews.
+    Elle est utilisée par l’interface pour afficher des boutons ou choix visuels.
+
+    image_name : nom interne donné à l’image dans le preview
+    image_path : chemin d'import de l’image
+    """
+    
+    # Vérification de l'existence de l'image appellée :
     if not os.path.exists(image_path):
         print(f"Erreur : L'image {image_path} est introuvable.")
         return None
+
+    # Création d'une nouvelle collection de previews si elle n’existe pas encore :
     if "main" not in preview_collections:
         preview_collections["main"] = bpy.utils.previews.new()
     pcoll = preview_collections["main"]
-    img_preview = pcoll.load(image_name, image_path, 'IMAGE')  
+
+    # Chargement de l'image dans la collection et retour de l'ID de l'image :
+    img_preview = pcoll.load(image_name, image_path, 'IMAGE')
     return img_preview.icon_id
 
+
+
+# ————————————————————————————————————————————————
+# MISE À JOUR DES OREILLES ET DES BOUCLES D'OREILLES
+# ————————————————————————————————————————————————
+
 def update_ears(self, context):
-    """Met à jour l'oreille et ajuste les boucles d'oreilles en fonction des choix sélectionnés."""
-    obj = bpy.data.objects.get("head")  # Récupérer l'objet 'head'
+    """
+    Met à jour les oreilles du personnage (via Boolean) et ajuste la visibilité
+    et la position des boucles d’oreilles (lobe et hélix) en fonction des sélections UI.
+    """
+    
+    # Vérification de la présence de la tête :
+    obj = bpy.data.objects.get("head")
     if not obj:
         print("L'objet 'head' n'existe pas !")
         return
-    # Vérifier s'il y a un modificateur Boolean
+    
+    # Récupération du modificateur Boolean sur la tête :
     bool_modifier = next((mod for mod in obj.modifiers if mod.type == 'BOOLEAN'), None)
     if not bool_modifier:
         print("Aucun modificateur Boolean trouvé sur 'head'.")
         return
-    # Associer l'oreille sélectionnée à un objet
+
+    # Dictionnaire des oreilles servant de Boolean :
     ear_objects = {
         "human": "boolEars1",
         "elfe": "boolEars2",
-        "fae": "boolEars3"
-    }
+        "fae": "boolEars3"}
+
+    # Application du bon objet Boolean en fonction du type d’oreille sélectionné :
     selected_ear = ear_objects.get(self.ear_type)
     if selected_ear:
         ear_obj = bpy.data.objects.get(selected_ear)
@@ -90,248 +148,302 @@ def update_ears(self, context):
         else:
             print(f"L'objet {selected_ear} n'existe pas dans la scène.")
 
-    # --- Mise à jour des boucles d'oreilles (Lobe + Hélix) ---
-    
-    # Boucles d'oreilles du lobe
+    # Dictionnaire des boucles d’oreilles (lobe et hélix) :
     lobe_earring_objects = {
         "earrings1": ("earrings_L1", "earrings_R1"),
         "earrings2": ("earrings_L2", "earrings_R2"),
         "earrings3": ("earrings_L3", "earrings_R3"),
         "earrings4": ("earrings_L4", "earrings_R4"),
-        "earrings5": ("earrings_L5", "earrings_R5")
-    }
-
-    # Boucles d'oreilles de l'hélix
+        "earrings5": ("earrings_L5", "earrings_R5")}
     helix_earring_objects = {
         "helix1": ("helix_L1", "helix_R1"),
         "helix2": ("helix_L2", "helix_R2"),
-        "helix3": ("helix_L3", "helix_R3")
-    }
+        "helix3": ("helix_L3", "helix_R3")}
 
-    # Offsets pour chaque type d'oreille
+    # Offsets de position en focntion du type d’oreille :
     lobe_offsets = {
         "human": (0.0, 0.0, 0.0),
         "elfe": (0.01, -0.01, 0.0),
-        "fae": (0.05, -0.02, 0.0)
-    }
-
+        "fae": (0.05, -0.02, 0.0)}
     helix_offsets = {
         "human": (0.0, 0.0, 0.0),
         "elfe": (-0.05, -0.58, 1.7),
-        "fae": (0.35, -0.63, 1.9)
-    }
-    
-    # Offsets de rotation en radians
+        "fae": (0.35, -0.63, 1.9)}
+
+    # Offsets de rotation (en radians) :
     from math import radians
     lobe_rotation_offsets = {
         "human": (radians(0), radians(0), radians(0)),
         "elfe": (radians(0), radians(0), radians(0)),
-        "fae": (radians(0), radians(0), radians(0))
-    }
-
+        "fae": (radians(0), radians(0), radians(0))}
     helix_rotation_offsets = {
         "human": (radians(0), radians(0), radians(0)),
         "elfe": (radians(-43), radians(33), radians(0)),
-        "fae": (radians(-50), radians(40), radians(0))
-    }
+        "fae": (radians(-50), radians(40), radians(0))}
 
-     # Récupérer les offsets selon le type d'oreille
+    # Application des offsets en fonction du type d’oreille sélectionné :
     lobe_offset = lobe_offsets.get(self.ear_type, (0, 0, 0))
     helix_offset = helix_offsets.get(self.ear_type, (0, 0, 0))
-
     lobe_rotation_offset = lobe_rotation_offsets.get(self.ear_type, (0, 0, 0))
     helix_rotation_offset = helix_rotation_offsets.get(self.ear_type, (0, 0, 0))
 
-    # Récupérer les boucles d'oreilles sélectionnées
+    # Récupération des sélections de boucles :
     selected_lobe_L = self.earrings_L
     selected_lobe_R = self.earrings_R
     selected_helix_L = self.helix_L
     selected_helix_R = self.helix_R
 
-    # Cacher toutes les boucles d'oreilles
+    # Désactivation de toutes les boucles :
     for earring_name in lobe_earring_objects.values():
         for obj_name in earring_name:
             obj = bpy.data.objects.get(obj_name)
             if obj:
                 obj.hide_set(True)
-
     for earring_name in helix_earring_objects.values():
         for obj_name in earring_name:
             obj = bpy.data.objects.get(obj_name)
             if obj:
                 obj.hide_set(True)
 
-    # --- Activer et placer les boucles du lobe ---
+    # Activation et positionnement des boucles :
     if selected_lobe_L:
         earring_obj_L = bpy.data.objects.get(selected_lobe_L)
         if earring_obj_L:
             earring_obj_L.hide_set(False)
-            earring_obj_L.location = lobe_offset  # Coordonnées MONDE
-
+            earring_obj_L.location = lobe_offset
     if selected_lobe_R:
         earring_obj_R = bpy.data.objects.get(selected_lobe_R)
         if earring_obj_R:
             earring_obj_R.hide_set(False)
-            earring_obj_R.location = (-lobe_offset[0], lobe_offset[1], lobe_offset[2])  # Inversion en X
-
-    # --- Activer et placer les boucles de l'hélix ---
+            earring_obj_R.location = (-lobe_offset[0], lobe_offset[1], lobe_offset[2])
     if selected_helix_L:
         helix_obj_L = bpy.data.objects.get(selected_helix_L)
         if helix_obj_L:
             helix_obj_L.hide_set(False)
-            helix_obj_L.location = helix_offset  # Coordonnées MONDE
-            helix_obj_L.rotation_euler = helix_rotation_offset  # Rotation MONDE
-
+            helix_obj_L.location = helix_offset
+            helix_obj_L.rotation_euler = helix_rotation_offset
     if selected_helix_R:
         helix_obj_R = bpy.data.objects.get(selected_helix_R)
         if helix_obj_R:
             helix_obj_R.hide_set(False)
-            helix_obj_R.location = (-helix_offset[0], helix_offset[1], helix_offset[2])  # Inversion en X
-            helix_obj_R.rotation_euler = (helix_rotation_offset[0], -helix_rotation_offset[1], -helix_rotation_offset[2])  # Inversion en X et Z
+            helix_obj_R.location = (-helix_offset[0], helix_offset[1], helix_offset[2])
+            helix_obj_R.rotation_euler = (
+                helix_rotation_offset[0], -helix_rotation_offset[1], -helix_rotation_offset[2])
+
+
+
+# ————————————————————————————————————————————————
+# MISE À JOUR DES SHAPE KEYS DU VISAGE
+# ————————————————————————————————————————————————
 
 def update_facial_shape_keys(self, context):
+    """
+    Met à jour les shape keys du visage (tête, yeux, sourcils, cils)
+    en fonction des valeurs sélectionnées dans l’UI.
+    """
+    
     head = bpy.data.objects.get("head")
     eyes = bpy.data.objects.get("eyes")
-    
-    # Sélectionner les sourcils actifs
+
+    # Dictionnaire des objets actifs (sourcils et cils) :
     brows_objects = {
         "eyebrows1": bpy.data.objects.get("eyebrows1"),
         "eyebrows2": bpy.data.objects.get("eyebrows2"),
-        "eyebrows3": bpy.data.objects.get("eyebrows3"),
-    }
-    
+        "eyebrows3": bpy.data.objects.get("eyebrows3"),}
     active_brows = brows_objects.get(self.brows_type)
-    
-    # Sélectionner les cils actifs
     eyelashes_objects = {
         "eyelashes1": bpy.data.objects.get("eyelashes1"),
         "eyelashes2": bpy.data.objects.get("eyelashes2"),
-        "eyelashes3": bpy.data.objects.get("eyelashes3"),
-    }
-    
+        "eyelashes3": bpy.data.objects.get("eyelashes3"),}
     active_eyelashes = eyelashes_objects.get(self.eyelashes_type)
 
-    # Shape keys associées
+    # Dictionnaire des shape keys :
     shape_keys = {
         "brows_height": self.brows_height,
         "brows_depth": self.brows_depth,
-        
         "eyes_height": self.eyes_height,
         "eyes_distance": self.eyes_distance,
-        
         "corner_EXT": self.corner_EXT,
         "corner_INT": self.corner_INT,
-        
         "eyelid_T_height": self.eyelid_T_height,
         "eyelid_T_angle": self.eyelid_T_angle,
         "eyelid_B_height": self.eyelid_B_height,
-        "eyelid_B_angle": self.eyelid_B_angle }
+        "eyelid_B_angle": self.eyelid_B_angle}
 
-    # Appliquer les shape keys pour tous les objets (head, eyes, et sourcils actifs)
+    # Application des shape keys sur chaque objet :
     for key, value in shape_keys.items():
-        if key in head.data.shape_keys.key_blocks:
+        if head and key in head.data.shape_keys.key_blocks:
             head.data.shape_keys.key_blocks[key].value = value
-        if key in eyes.data.shape_keys.key_blocks:
+        if eyes and key in eyes.data.shape_keys.key_blocks:
             eyes.data.shape_keys.key_blocks[key].value = value
-        if key in active_brows.data.shape_keys.key_blocks:
+        if active_brows and key in active_brows.data.shape_keys.key_blocks:
             active_brows.data.shape_keys.key_blocks[key].value = value
-        if key in active_eyelashes.data.shape_keys.key_blocks:
+        if active_eyelashes and key in active_eyelashes.data.shape_keys.key_blocks:
             active_eyelashes.data.shape_keys.key_blocks[key].value = value
 
+
+
+# ————————————————————————————————————————————————
+# MISE À JOUR SPÉCIFIQUE DES SHAPE KEYS DES SOURCILS
+# ————————————————————————————————————————————————
+
 def update_brows_shape_keys(self, context):
+    """
+    Met à jour uniquement les shape keys spécifiques aux sourcils sélectionnés.
+    Cette fonction permet d’aller plus loin que la synchronisation globale.
+    """
+    
     active_brows = bpy.data.objects.get(self.brows_type)
     if not active_brows or not active_brows.data.shape_keys:
         return
 
+    # Dictionnaire des shape keys spécifiques aux sourcils :
     shape_keys = {
-    
-        # Déjà synchronisées avec head/eyes
         "brows_height": self.brows_height,
         "brows_depth": self.brows_depth,
-        
-        # Shape keys spécifiques
         "brows_proximity": self.brows_proximity,
         "brows_size": self.brows_size,
         "brows_angle": self.brows_angle,
         "brows_thickness": self.brows_thickness,
         "brows_tilt": self.brows_tilt,
-        
         "brows_arch": self.brows_arch,
         "brows_frown": self.brows_frown}
 
+    # Application des valeurs sur les shape keys des sorucils :
     for key, value in shape_keys.items():
         if key in active_brows.data.shape_keys.key_blocks:
             active_brows.data.shape_keys.key_blocks[key].value = value
         else:
             print(f"Shape Key '{key}' non trouvée sur '{self.brows_type}'.")
+
+
             
+# ————————————————————————————————————————————————
+# MISE À JOUR DES SOURCILS
+# ————————————————————————————————————————————————
+
 def update_brows(self, context):
+    """
+    Active l’objet sourcil correspondant à l’option choisie par l’utilisateur·ice
+    et désactive les autres. Ensuite, applique les shape keys sur le modèle actif.
+
+    Cette méthode suppose que plusieurs versions de sourcils existent dans la scène
+    (eyebrows1, eyebrows2, eyebrows3) et qu’un seul doit être visible à la fois.
+    """
+
+    # Dictionnaire des sourcils :
     brows_objects = {
         "eyebrows1": bpy.data.objects.get("eyebrows1"),
         "eyebrows2": bpy.data.objects.get("eyebrows2"),
         "eyebrows3": bpy.data.objects.get("eyebrows3"),}
 
-    # Désactiver tous les sourcils
+    # Désactivation de tous les sourcils :
     for brows in brows_objects.values():
         if brows:
             brows.hide_set(True)
 
-    # Activer uniquement les sourcils sélectionnés
+    # Activation du modèle de sourcil sélectionné :
     active_brows = brows_objects.get(self.brows_type)
     if active_brows:
         active_brows.hide_set(False)
 
-    # Mettre à jour les shape keys des sourcils actifs
+    # Mise à jour des shape keys liées au modèle actif :
     update_brows_shape_keys(self, context)
 
+
+
+# ————————————————————————————————————————————————
+# MISE À JOUR DES CILS
+# ————————————————————————————————————————————————
+
 def update_eyelashes(self, context):
+    """
+    Active l’objet cils sélectionné dans l’interface et désactive les autres.
+    Applique ensuite les shape keys correspondants au modèle actif.
+
+    Fonctionne avec des objets nommés eyelashes1, eyelashes2, eyelashes3.
+    """
+
+    # Dictionnaire des cils :
     eyelashes_objects = {
         "eyelashes1": bpy.data.objects.get("eyelashes1"),
         "eyelashes2": bpy.data.objects.get("eyelashes2"),
         "eyelashes3": bpy.data.objects.get("eyelashes3"),}
 
-    # Désactiver tous les cils
+    # Désactivation de tous les modèles de cils :
     for eyelashes in eyelashes_objects.values():
         if eyelashes:
             eyelashes.hide_set(True)
 
-    # Activer uniquement les cils sélectionnés
+    # Activation du modèle sélectionné :
     active_eyelashes = eyelashes_objects.get(self.eyelashes_type)
     if active_eyelashes:
         active_eyelashes.hide_set(False)
     
-    # Mettre à jour les shape keys des cils actifs
+    # Application des shape keys spécifiques au modèle choisi :
     update_facial_shape_keys(self, context)
 
+
+
+# ————————————————————————————————————————————————
+# MISE À JOUR DES TEXTURES DE PUPILLES
+# ————————————————————————————————————————————————
+
 def update_pupils(self, context):
+    """
+    Applique une texture spécifique (pupille) sur les deux yeux (pupil_R, pupil_L),
+    selon le choix de l’utilisateur·ice. Les textures doivent être pré-chargées
+    et nommées dans la scène comme : pupilsText1.png, pupilsText2.png, etc.
+    """
+
+    # Dictionnaire des tetxures de pupilles :
     pupils_textures = {
         "pupil1": bpy.data.images.get("pupilsText1.png"),
         "pupil2": bpy.data.images.get("pupilsText2.png"),
         "pupil3": bpy.data.images.get("pupilsText3.png"),}
 
+    # Vérification de l'existance de la texture choisie :
     selected_texture = pupils_textures.get(self.pupils_textures)
     if not selected_texture:
-        return  # Empêche l'application d'une texture inexistante
+        return
 
-    if selected_texture:
-        # Appliquer la texture aux deux pupilles
-        for pupil_name in ["pupil_R", "pupil_L"]:
-            pupil = bpy.data.objects.get(pupil_name)
-            if pupil and pupil.active_material:
-                mat = pupil.active_material
-                nodes = mat.node_tree.nodes
+    # Application de la texture aux deux pupilles :
+    for pupil_name in ["pupil_R", "pupil_L"]:
+        pupil = bpy.data.objects.get(pupil_name)
+        if pupil and pupil.active_material:
+            mat = pupil.active_material
+            nodes = mat.node_tree.nodes
 
-                texture_node = None
-                for node in nodes:
-                    if node.type == "TEX_IMAGE":
-                        texture_node = node
-                        break  # On sort dès qu'on a trouvé le bon nœud
-                
-                if texture_node:  # Si un nœud a été trouvé
-                    texture_node.image = selected_texture
-                    texture_node.image.reload()  # Rafraîchir l'affichage
+            # Recherche du nœud image dans le shader (material) :
+            texture_node = None
+            for node in nodes:
+                if node.type == "TEX_IMAGE":
+                    texture_node = node
+                    break
+            
+            # Application de la nouvelle image si un nœud a été trouvé :
+            if texture_node:
+                texture_node.image = selected_texture
+                texture_node.image.reload()
+
+
+
+# ————————————————————————————————————————————————
+# MISE À JOUR DE LA COIFFURE
+# ————————————————————————————————————————————————
 
 def update_hair(self, context):
+    """
+    Gère l’affichage de la coiffure du personnage selon les options choisies.
+    Deux types de coiffures sont possibles :
+    - Simples (hairstyle1, hairstyle2, etc.)
+    - Détailées avec bases, mèches, franges, arrière (activées si show_detailed_hair est True)
+
+    Cette méthode active l’objet approprié dans la scène, applique les bons modificateurs
+    booléens pour ajouter les détails, et ajuste la position de la frange si nécessaire.
+    """
+
+    # Dictionnaires des cheveux, mèches, franges etc :
     hairstyle_objects = {
         "hairstyle1": "hairstyle1",
         "hairstyle2": "hairstyle2",
@@ -356,20 +468,27 @@ def update_hair(self, context):
         "boolBack1": "boolBack1",
         "boolBack2": "boolBack2",
         "boolBack3": "boolBack3",
-        "boolBack4": "boolBack4"}
+        "boolBack4": "boolBack4",}
     bangs_offsets = {
         "hb1": (0.0, 0.0, 0.0),
         "hb2": (0.0, -0.1, -0.2),
         "hb3": (0.0, -0.3, -0.25),
         "hb4": (0.0, -0.1, -0.3),
         "hb5": (0.0, -0.2, -0.3),}
+
+    # Sélection des éléments choisis dans les dictionnaires :
     selected_hairstyle = hairstyle_objects.get(self.hairstyle, None)
     selected_hair = hair_objects.get(self.hair_base, None)
     selected_bangs = bangs_objects.get(self.bangs, None)
     selected_strands = strands_objects.get(self.strands, None)
     selected_back = back_objects.get(self.back, None)
     new_position = bangs_offsets.get(self.hair_base, (0.0, 0.0, 0.0))
-    # Désactiver toutes les coiffures, dabord les bases puis les hairstyles :
+
+    # ——————————————————————————————————————————
+    # DÉSACTIVATION GÉNÉRALE DE TOUS LES ÉLÉMENTS
+    # ——————————————————————————————————————————
+
+    # Désactivation de tout les cheveux :
     for obj_name in hair_objects.values():
         obj = bpy.data.objects.get(obj_name)
         if obj:
@@ -378,40 +497,68 @@ def update_hair(self, context):
         obj = bpy.data.objects.get(obj_name)
         if obj:
             obj.hide_set(True)
-    # Arrêt de la méthode si une hairstyle est choisie + activation hairstyle sélectionnée :
+
+    # ——————————————————————————————————————————
+    # CAS 1 : COIFFURE SIMPLE (non détaillée)
+    # ——————————————————————————————————————————
+
     if selected_hairstyle and not self.show_detailed_hair:
         obj = bpy.data.objects.get(selected_hairstyle)
         if obj:
             obj.hide_set(False)
         return
-    # Arrêt de la méthode si le personnage est chauve :
+
+    # ——————————————————————————————————————————
+    # CAS 2 : PERSONNAGE CHAUVE
+    # ——————————————————————————————————————————
+
     if self.hair_base == "bald":
         return
-    # Activation de la hairbase sélectionnée :
+
+    # ——————————————————————————————————————————
+    # CAS 3 : COIFFURE DÉTAILLÉE
+    # ——————————————————————————————————————————
+
     if selected_hair:
         obj = bpy.data.objects.get(selected_hair)
         if obj:
             obj.hide_set(False)
-            # Application des bangs sélectionnées au Boolean correspondant :
-            bool_modifier_bangs = next((mod for mod in obj.modifiers if mod.type == 'BOOLEAN' and mod.name == "BooleanBangs"), None)
+
+            # Application du modificateur boolean des franges :
+            bool_modifier_bangs = next(
+                (mod for mod in obj.modifiers if mod.type == 'BOOLEAN' and mod.name == "BooleanBangs"), None)
             if bool_modifier_bangs:
                 bool_modifier_bangs.show_viewport = True
                 bool_modifier_bangs.object = bpy.data.objects.get(selected_bangs) if selected_bangs else None
-            # Application des strands sélectionnées au Boolean correspondant :
-            bool_modifier_strands = next((mod for mod in obj.modifiers if mod.type == 'BOOLEAN' and mod.name == "BooleanStrands"), None)
+
+            # Application du modificateur boolean des mèches :
+            bool_modifier_strands = next(
+                (mod for mod in obj.modifiers if mod.type == 'BOOLEAN' and mod.name == "BooleanStrands"), None)
             if bool_modifier_strands:
                 bool_modifier_strands.show_viewport = True
                 bool_modifier_strands.object = bpy.data.objects.get(selected_strands) if selected_strands else None
-            # Application du back sélectionné au Boolean correspondant :
-            bool_modifier_back = next((mod for mod in obj.modifiers if mod.type == 'BOOLEAN' and mod.name == "BooleanBack"), None)
+
+            # Application du modificateur boolean de l’arrière :
+            bool_modifier_back = next(
+                (mod for mod in obj.modifiers if mod.type == 'BOOLEAN' and mod.name == "BooleanBack"), None)
             if bool_modifier_back:
                 bool_modifier_back.show_viewport = True
                 bool_modifier_back.object = bpy.data.objects.get(selected_back) if selected_back else None
-    # Application de l'offset pour les bangs en world space :
+
+    # ——————————————————————————————————————————
+    # POSITIONNEMENT DES FRANGES
+    # ——————————————————————————————————————————
+
     if selected_bangs:
         bangs_obj = bpy.data.objects.get(selected_bangs)
         if bangs_obj:
             bangs_obj.location = new_position
+
+
+
+# ————————————————————————————————————————————————
+# DICTIONNAIRES ENTRE IMAGES ET PROPRIETE
+# ————————————————————————————————————————————————
 
 class BUSTE_OT_SetEarSection(bpy.types.Operator):
     bl_idname = "buste.set_ear_section"
@@ -423,7 +570,7 @@ class BUSTE_OT_SetEarSection(bpy.types.Operator):
         props = context.scene.buste_customizer
         props.open_ear_section = self.section
 
-        # Mise à jour de l'image associée
+        # Mise à jour de l'image associée :
         if self.section == "ear_type":
             props.ear_image = "ear_base"
         elif self.section == "earrings_L":
@@ -447,7 +594,7 @@ class BUSTE_OT_SetEyeSection(bpy.types.Operator):
         props = context.scene.buste_customizer
         props.open_eye_section = self.section
 
-        # Mise à jour de l'image associée
+        # Mise à jour de l'image associée :
         if self.section == "eyelashes_type":
             props.eye_image = "eyes_eyelashes"
         elif self.section == "pupils_textures":
@@ -483,7 +630,7 @@ class BUSTE_OT_SetBrowSection(bpy.types.Operator):
         props = context.scene.buste_customizer
         props.open_brow_section = self.section
 
-        # Mise à jour de l'image associée
+        # Mise à jour de l'image associée :
         if self.section == "brows_type":
             props.brow_image = "brows_type"
         elif self.section == "brows_height":
@@ -517,7 +664,7 @@ class BUSTE_OT_SetHairSection(bpy.types.Operator):
         props = context.scene.buste_customizer
         props.open_hair_section = self.section
 
-        # Mise à jour de l'image associée
+        # Mise à jour de l'image associée :
         if self.section == "hair_default":
             props.hair_image = "hair_default"
         elif self.section == "hairstyle":
@@ -532,7 +679,13 @@ class BUSTE_OT_SetHairSection(bpy.types.Operator):
             props.hair_image = "hair_back"
         
         return {'FINISHED'}
-    
+
+
+
+# ————————————————————————————————————————————————
+# CREATION OPERATEUR TOGGLE ANIMATION
+# ————————————————————————————————————————————————
+
 class BUSTE_OT_PlayAnimation(bpy.types.Operator):
     bl_idname = "buste.play_animation"
     bl_label = "Toggle Eyes Animation"
@@ -540,7 +693,13 @@ class BUSTE_OT_PlayAnimation(bpy.types.Operator):
     def execute(self, context):
         bpy.ops.screen.animation_play()
         return {'FINISHED'}
-    
+
+
+
+# ————————————————————————————————————————————————
+# CREATION UI
+# ————————————————————————————————————————————————
+   
 class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
     bl_label = "Character Maker 3D Portrait"
     bl_idname = "BUSTE_PT_CustomizerPanel"
@@ -552,7 +711,7 @@ class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
         layout = self.layout
         props = context.scene.buste_customizer
         
-        # Afficher le bouton de chargement de scene :
+        # Affichage du bouton de chargement de scene :
         if not props.charge_scene:
             box = layout.box()
             box.separator()
@@ -567,7 +726,7 @@ class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
             layout.separator()
             layout.separator()
 
-        # Afficher l'interface principale :
+        # Affichage de l'interface principale :
         if props.charge_scene:
             layout.separator()
             layout.separator()
@@ -675,6 +834,7 @@ class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
             row.operator("buste.set_eye_section", text="Eyes Height").section = "eyes_height"
             row.operator("buste.set_eye_section", text="Eyes Distance").section = "eyes_distance"
             box.separator()
+            
             if props.open_eye_section == "eyelashes_type":
                 split = box.split(factor=0.5)
                 col_L = split.column()
@@ -880,7 +1040,13 @@ class BUSTE_PT_CustomizerPanel(bpy.types.Panel):
                 col_R = split.column()
                 col_R.prop(props, "hairstyle", text="")
             box.separator()
-            
+
+
+
+# ————————————————————————————————————————————————
+# DICTIONNAIRES DE PROPRIETES
+# ————————————————————————————————————————————————
+               
 class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
     
     # PARAMETRE DE CHARGEMENT SCENE ____________________________________________________________________________________________
@@ -1068,25 +1234,37 @@ class BUSTE_CustomizerProperties(bpy.types.PropertyGroup):
         default=True,
     update=update_hair)
 
-def load_icons():
-    global preview_collections  # si nécessaire
 
-    # Dossier sur PC ATI :
-    #ICON_DIR = r"D:\Git Repositories\Character-Maker-3D-Portrait\Icons"
-    # Dossier sur PC perso :
-    #ICON_DIR = r"D:\Documents\2024-2025\Python\S2\Character-Maker-3D-Portrait\Icons"
-    # Dossier avec Add-on :
+
+# ————————————————————————————————————————————————
+# CHARGEMENT DES ICÔNES POUR L'INTERFACE
+# ————————————————————————————————————————————————
+
+def load_icons():
+    """
+    Charge toutes les icônes personnalisées utilisées dans l’interface du customizer.
+    Ces images sont associées à des `IntProperty` dans la scène afin d’être utilisées
+    comme prévisualisations dans l’UI.
+
+    Les icônes sont stockées dans un dossier "icons" situé dans le même dossier que le script.
+    """
+
+    # Gérer les icônes si besoin de les stocker pour d'autres usages :
+    global preview_collections
+
+    # Chemin du dossier d'icônes (dynamique pour compatibilité avec l'add-on) :
     ICON_DIR = os.path.join(os.path.dirname(__file__), "icons")
-    
-    # Dictionnaire des images à charger :
+
+    # Dictionnaire des fichiers d’icônes à charger :
     icon_files = {
+        # Oreilles :
         "ear_base": "ear_base.png",
         "ear_default": "ear_default.png",
         "ear_helix_L": "ear_helix_L.png",
         "ear_helix_R": "ear_helix_R.png",
         "ear_lobe_L": "ear_lobe_L.png",
         "ear_lobe_R": "ear_lobe_R.png",
-
+        # Yeux :
         "eyes_corner_EXT": "eyes_corner_EXT.png",
         "eyes_corner_INT": "eyes_corner_INT.png",
         "eyes_default": "eyes_default.png",
@@ -1095,8 +1273,8 @@ def load_icons():
         "eyes_eyelid_B": "eyes_eyelid_B.png",
         "eyes_eyelid_T": "eyes_eyelid_T.png",
         "eyes_height": "eyes_height.png",
-        "eyes_pupil": "eyes_pupil.png",
-        
+        "eyes_pupil": "eyes_pupil.png",  
+        # Sourcils :
         "brows_angle": "brows_angle.png",
         "brows_arch": "brows_arch.png",
         "brows_default": "brows_default.png",
@@ -1108,28 +1286,27 @@ def load_icons():
         "brows_thickness": "brows_thickness.png",
         "brows_tilt": "brows_tilt.png",
         "brows_type": "brows_type.png",
-        
+        # Cheveux :
         "hair_default": "hair_default.png",
         "hair_all": "hair_all.png",
         "hair_base": "hair_base.png",
         "hair_bangs": "hair_bangs.png",
         "hair_strands": "hair_strands.png",
-        "hair_back": "hair_back.png"}
+        "hair_back": "hair_back.png",}
 
-    # Charger les images dynamiquement :
+    # Chargement des images et attribution d'un ID à chaque icône :
     icon_ids = {}
     for name, filename in icon_files.items():
         icon_path = os.path.join(ICON_DIR, filename)
-        icon_ids[name] = load_image(name, icon_path) or 0  # Assure que la valeur par défaut est 0
-
-    # Oreilles ID :
+        icon_ids[name] = load_image(name, icon_path) or 0
+    # Oreilles :
     bpy.types.Scene.ear_preview_icon_1 = bpy.props.IntProperty(default=icon_ids["ear_default"])
     bpy.types.Scene.ear_preview_icon_2 = bpy.props.IntProperty(default=icon_ids["ear_base"])
     bpy.types.Scene.ear_preview_icon_3 = bpy.props.IntProperty(default=icon_ids["ear_lobe_L"])
     bpy.types.Scene.ear_preview_icon_4 = bpy.props.IntProperty(default=icon_ids["ear_lobe_R"])
     bpy.types.Scene.ear_preview_icon_5 = bpy.props.IntProperty(default=icon_ids["ear_helix_L"])
     bpy.types.Scene.ear_preview_icon_6 = bpy.props.IntProperty(default=icon_ids["ear_helix_R"])
-    # Yeux ID :
+    # Yeux :
     bpy.types.Scene.eye_preview_icon_1 = bpy.props.IntProperty(default=icon_ids["eyes_default"])
     bpy.types.Scene.eye_preview_icon_2 = bpy.props.IntProperty(default=icon_ids["eyes_height"])
     bpy.types.Scene.eye_preview_icon_3 = bpy.props.IntProperty(default=icon_ids["eyes_corner_EXT"])
@@ -1138,7 +1315,7 @@ def load_icons():
     bpy.types.Scene.eye_preview_icon_6 = bpy.props.IntProperty(default=icon_ids["eyes_eyelid_B"])
     bpy.types.Scene.eye_preview_icon_7 = bpy.props.IntProperty(default=icon_ids["eyes_pupil"])
     bpy.types.Scene.eye_preview_icon_8 = bpy.props.IntProperty(default=icon_ids["eyes_eyelashes"])
-    # Sourcils ID :
+    # Sourcils :
     bpy.types.Scene.brows_preview_icon_1 = bpy.props.IntProperty(default=icon_ids["brows_default"])
     bpy.types.Scene.brows_preview_icon_2 = bpy.props.IntProperty(default=icon_ids["brows_angle"])
     bpy.types.Scene.brows_preview_icon_3 = bpy.props.IntProperty(default=icon_ids["brows_arch"])
@@ -1150,34 +1327,68 @@ def load_icons():
     bpy.types.Scene.brows_preview_icon_9 = bpy.props.IntProperty(default=icon_ids["brows_thickness"])
     bpy.types.Scene.brows_preview_icon_10 = bpy.props.IntProperty(default=icon_ids["brows_tilt"])
     bpy.types.Scene.brows_preview_icon_11 = bpy.props.IntProperty(default=icon_ids["brows_type"])
-    # Hair ID :
+    # Cheveux :
     bpy.types.Scene.hair_preview_icon_1 = bpy.props.IntProperty(default=icon_ids["hair_default"])
     bpy.types.Scene.hair_preview_icon_2 = bpy.props.IntProperty(default=icon_ids["hair_all"])
     bpy.types.Scene.hair_preview_icon_3 = bpy.props.IntProperty(default=icon_ids["hair_base"])
     bpy.types.Scene.hair_preview_icon_4 = bpy.props.IntProperty(default=icon_ids["hair_bangs"])
     bpy.types.Scene.hair_preview_icon_5 = bpy.props.IntProperty(default=icon_ids["hair_strands"])
     bpy.types.Scene.hair_preview_icon_6 = bpy.props.IntProperty(default=icon_ids["hair_back"])
-    
-classes = [BUSTE_PT_CustomizerPanel, BUSTE_CustomizerProperties, BUSTE_OT_SetEarSection, BUSTE_OT_SetEyeSection, BUSTE_OT_SetBrowSection, BUSTE_OT_SetHairSection, BUSTE_OT_PlayAnimation]
+
+
+
+# ————————————————————————————————————————————————
+# ENREGISTREMENT / DÉSENREGISTREMENT DE L’ADD-ON
+# ————————————————————————————————————————————————
+
+# Dictionnaire des classes utilisées par l’add-on :
+classes = [
+    BUSTE_PT_CustomizerPanel,
+    BUSTE_CustomizerProperties,
+    BUSTE_OT_SetEarSection,
+    BUSTE_OT_SetEyeSection,
+    BUSTE_OT_SetBrowSection,
+    BUSTE_OT_SetHairSection,
+    BUSTE_OT_PlayAnimation,]
 
 def register():
+    """
+    Fonction appelée à l’activation de l’add-on.
+    Enregistre les classes, propriétés et charge les icônes.
+    """
+    
+    # Enregistrement de toutes les classes définies dans la liste "classes" :
     for cls in classes:
         bpy.utils.register_class(cls)
-    
+
+    # Ajout d'une propriété personnalisée à la scène, pour stocker les choix de l'utilisateur :
     bpy.types.Scene.buste_customizer = bpy.props.PointerProperty(type=BUSTE_CustomizerProperties)
 
-    # Charger les icones :
+    # Chargement des icônes de l’interface :
     load_icons()
 
 def unregister():
+    """
+    Fonction appelée à la désactivation de l’add-on.
+    Supprime les classes, propriétés et nettoie les previews.
+    """
+    
+    # Désenregistrement de toutes les classes dans l'ordre inverse :
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
 
-    # Nettoyage des previews :
+    # Nettoyage des icônes si utilisé via preview_collections :
     for pcoll in preview_collections.values():
         bpy.utils.previews.remove(pcoll)
-    
+        
+    # Suppression de la propriété personnalisée de la scène :
     del bpy.types.Scene.buste_customizer
+
+
+
+# ————————————————————————————————————————————————
+# EXÉCUTION DIRECTE
+# ————————————————————————————————————————————————
 
 if __name__ == "__main__":
     register()
